@@ -5,10 +5,15 @@ import CharacterProfile from '@/components/CharacterProfile';
 import LessonsSection from '@/components/LessonsSection';
 import BattleSystem from '@/components/BattleSystem';
 import Leaderboard from '@/components/Leaderboard';
+import ShopSection from '@/components/ShopSection';
+import AuthScreen from '@/components/AuthScreen';
+import CreateCharacter from '@/components/CreateCharacter';
+import { useGame } from '@/lib/GameContext';
 
-type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'leaderboard';
+type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'leaderboard' | 'shop';
 
 export default function Index() {
+  const { token, character, authLoading } = useGame();
   const [activeSection, setActiveSection] = useState<Section>('home');
   const [visible, setVisible] = useState(true);
 
@@ -24,6 +29,24 @@ export default function Index() {
   useEffect(() => {
     setVisible(true);
   }, []);
+
+  // Loading spinner
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-cyber-dark flex items-center justify-center cyber-grid">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="font-orbitron text-cyber-cyan text-sm tracking-widest">ПОДКЛЮЧЕНИЕ К СИСТЕМЕ...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in → auth screen
+  if (!token) return <AuthScreen />;
+
+  // No character → creation screen
+  if (!character) return <CreateCharacter />;
 
   return (
     <div className="min-h-screen bg-cyber-dark">
@@ -206,6 +229,7 @@ export default function Index() {
         {activeSection === 'lessons' && <LessonsSection />}
         {activeSection === 'battle' && <BattleSystem />}
         {activeSection === 'leaderboard' && <Leaderboard />}
+        {activeSection === 'shop' && <ShopSection />}
       </main>
     </div>
   );

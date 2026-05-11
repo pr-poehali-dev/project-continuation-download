@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Get current quest unauthenticated",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "current"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

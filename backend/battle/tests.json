@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Get enemies list",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "enemies"},
+      "expectedStatus": 200,
+      "expectedBody": {"enemies": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

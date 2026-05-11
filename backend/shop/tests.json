@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Get shop items",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "items"},
+      "expectedStatus": 200,
+      "expectedBody": {"items": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
