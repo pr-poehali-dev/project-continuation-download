@@ -138,7 +138,7 @@ export default function CharacterProfile() {
                 ].map(stat => (
                   <div key={stat.label} className="cyber-panel p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Icon name={stat.icon as any} size={14} style={{ color: stat.color }} />
+                      <Icon name={stat.icon as 'Brain'} size={14} style={{ color: stat.color }} />
                       <span className="text-gray-400 text-xs font-mono">{stat.label}</span>
                       <span className="ml-auto font-orbitron text-sm" style={{ color: stat.color }}>{stat.value}</span>
                     </div>
@@ -166,7 +166,7 @@ export default function CharacterProfile() {
                       className="w-10 h-10 flex items-center justify-center border"
                       style={{ borderColor: RARITY_COLORS[slot.rarity] + '60', backgroundColor: RARITY_COLORS[slot.rarity] + '10' }}
                     >
-                      <Icon name={slot.icon as any} size={18} style={{ color: RARITY_COLORS[slot.rarity] }} />
+                      <Icon name={slot.icon as 'Crown'} size={18} style={{ color: RARITY_COLORS[slot.rarity] }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-gray-400 text-xs font-mono">{slot.label}</div>
