@@ -135,6 +135,15 @@ export default function Index() {
   );
 }
 
+const CLASS_IMG_HOME: Record<string, string> = {
+  cipher:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
+  data_ghost:       'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
+  neural_architect: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
+  hacker:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
+  netrunner:        'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
+  street_samurai:   'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
+};
+
 function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
   const { character } = useGame();
   const prog = useProgress();
@@ -149,163 +158,185 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
     hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
   };
   const charColor = classColor[character.class] || '#00ff41';
+  const charImg   = CLASS_IMG_HOME[character.class] || CLASS_IMG_HOME.cipher;
   const xpPct = Math.round((character.xp / character.xp_to_next) * 100);
+  const hpPct = Math.round((character.hp / character.max_hp) * 100);
 
-  // Дневные задачи
   const dailyTasks = [
-    { label: 'Пройди 1 урок', done: prog.dailyLessons >= 1, current: prog.dailyLessons, goal: 1, color: '#00ff41' },
-    { label: 'Выиграй 1 бой', done: prog.dailyBattles >= 1, current: prog.dailyBattles, goal: 1, color: '#ff00ff' },
-    { label: 'Пройди 1 данж', done: prog.dailyDungeons >= 1, current: prog.dailyDungeons, goal: 1, color: '#ffaa00' },
+    { label: 'Пройди урок', done: prog.dailyLessons >= 1, current: prog.dailyLessons, goal: 1, color: '#00ff41', section: 'lessons', icon: '📚' },
+    { label: 'Выиграй бой',  done: prog.dailyBattles >= 1, current: prog.dailyBattles,  goal: 1, color: '#ff00ff', section: 'battle',  icon: '⚔️' },
+    { label: 'Пройди данж', done: prog.dailyDungeons >= 1, current: prog.dailyDungeons, goal: 1, color: '#ffaa00', section: 'dungeon', icon: '🏰' },
   ];
   const dailyDone = dailyTasks.filter(t => t.done).length;
 
+  const ACTIONS = [
+    { icon: '⚔️', title: 'Code Combat', desc: 'Пиши код — наноси урон NEXUS', color: '#ff00ff', section: 'battle' },
+    { icon: '📚', title: 'Уроки Python', desc: 'Теория, примеры, практика', color: '#00ff41', section: 'lessons' },
+    { icon: '🏰', title: 'Подземелья',   desc: 'Тесты, лут и XP', color: '#ffaa00', section: 'dungeon' },
+    { icon: '🗺️', title: 'Карта',        desc: 'Районы CodeGrid-9', color: '#00ffff', section: 'map' },
+    { icon: '📜', title: 'Квесты',        desc: 'Миссии Archive', color: '#00aaff', section: 'quests' },
+    { icon: '💬', title: 'Агенты',        desc: 'NPC: PYTH-0N, K4I', color: '#00ff41', section: 'npc' },
+    { icon: '🏆', title: 'Достижения',    desc: '18+ ачивок с наградами', color: '#ffff00', section: 'achievements' },
+    { icon: '🔨', title: 'Крафт',         desc: 'Создавай импланты', color: '#aa00ff', section: 'crafting' },
+    { icon: '🌑', title: 'Магазин',       desc: 'Лутбоксы и экипировка', color: '#aa00ff', section: 'shop' },
+  ];
+
   return (
-    <div className="min-h-screen relative">
-      <div className="absolute inset-0 cyber-grid opacity-20 pointer-events-none" />
+    <div className="min-h-screen relative overflow-x-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 cyber-grid opacity-15 pointer-events-none" />
       <div className="absolute inset-0 scanlines pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: `radial-gradient(ellipse at 70% 20%, ${charColor}08 0%, transparent 55%)` }} />
 
-      <div className="relative z-10 px-6 lg:px-10 py-10 max-w-5xl">
-        {/* Welcome header */}
-        <div className="mb-8 animate-fade-in-up">
-          <div className="font-mono text-[10px] text-gray-700 tracking-widest mb-1">
-            // UNDERNET HUB · CODEGRID-9 · 2087
-          </div>
-          <h1 className="font-orbitron text-3xl lg:text-4xl text-white mb-1">
-            АГЕНТ <span style={{ color: charColor }}>{character.name}</span>
-          </h1>
-          <div className="flex items-center gap-3 flex-wrap mt-1">
-            <span className="font-mono text-xs" style={{ color: charColor }}>
-              {classLabel[character.class] ?? character.class.toUpperCase()}
-            </span>
-            <span className="text-gray-700 font-mono text-xs">·</span>
-            <span className="text-gray-500 font-mono text-xs">LVL {character.level}</span>
-            <span className="text-gray-700 font-mono text-xs">·</span>
-            <span className="text-gray-500 font-mono text-xs">АКТ {character.current_chapter}</span>
-          </div>
-        </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 py-8 lg:py-10">
 
-        {/* Progress overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {[
-            { label: 'Уровень', value: character.level, color: charColor },
-            { label: 'XP', value: `${character.xp}/${character.xp_to_next}`, color: '#00ffff', bar: xpPct },
-            { label: 'HP', value: `${character.hp}/${character.max_hp}`, color: '#ff4060', bar: Math.round((character.hp / character.max_hp) * 100) },
-            { label: 'Creds', value: `⚡ ${character.coins}`, color: '#ffaa00' },
-          ].map(stat => (
-            <div key={stat.label} className="cyber-panel p-4 animate-fade-in-up" style={{ borderColor: stat.color + '20' }}>
-              <div className="text-gray-600 font-mono text-xs mb-1">{stat.label}</div>
-              <div className="font-orbitron text-xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-              {stat.bar !== undefined && (
-                <div className="mt-2 h-1 bg-black/50">
-                  <div className="h-full transition-all" style={{ width: `${stat.bar}%`, backgroundColor: stat.color, boxShadow: `0 0 4px ${stat.color}` }} />
+        {/* ═══ TOP HERO SECTION ═══ */}
+        <div className="flex flex-col lg:flex-row items-stretch gap-6 mb-8">
+
+          {/* Left: Character card */}
+          <div className="relative flex-shrink-0 w-full lg:w-64">
+            <div className="relative overflow-hidden border-2 w-full"
+              style={{
+                borderColor: charColor + '60',
+                boxShadow: `0 0 60px ${charColor}15, 0 0 120px ${charColor}06`,
+                clipPath: 'polygon(0 0, 92% 0, 100% 8%, 100% 100%, 8% 100%, 0 92%)',
+                aspectRatio: '3/4',
+                backgroundColor: '#050a0e',
+              }}>
+              <img src={charImg} alt={character.name}
+                className="w-full h-full object-cover object-top" />
+              <div className="absolute inset-0"
+                style={{ background: 'linear-gradient(to top, rgba(5,10,14,0.96) 0%, rgba(5,10,14,0.2) 40%, transparent 65%)' }} />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="font-orbitron text-xl font-black text-white drop-shadow-lg">{character.name}</div>
+                <div className="font-mono text-xs mt-0.5" style={{ color: charColor }}>
+                  {classLabel[character.class] ?? character.class.toUpperCase()}
                 </div>
-              )}
+              </div>
+              <div className="absolute top-3 left-3 px-2 py-0.5 font-orbitron text-xs border"
+                style={{ color: charColor, borderColor: charColor + '80', backgroundColor: '#050a0ecc' }}>
+                LVL {character.level}
+              </div>
             </div>
-          ))}
-        </div>
-
-        {/* Daily progress */}
-        <div className="mb-8">
-          <div className="font-mono text-xs text-gray-600 mb-3 tracking-widest">
-            // ЕЖЕДНЕВНЫЕ ЗАДАЧИ · {dailyDone}/{dailyTasks.length} ВЫПОЛНЕНО
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {dailyTasks.map(task => (
-              <div key={task.label}
-                className="border p-3 transition-all"
-                style={{
-                  borderColor: task.done ? task.color + '60' : '#ffffff0a',
-                  backgroundColor: task.done ? task.color + '08' : 'transparent',
-                }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-4 h-4 border-2 flex items-center justify-center flex-shrink-0`}
-                    style={{ borderColor: task.done ? task.color : '#333', backgroundColor: task.done ? task.color + '25' : 'transparent' }}>
-                    {task.done && <span style={{ color: task.color, fontSize: '9px' }}>✓</span>}
+
+          {/* Right: Stats + Daily */}
+          <div className="flex-1 flex flex-col gap-4">
+
+            {/* Headline */}
+            <div>
+              <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-1">
+                // UNDERNET HUB · CODEGRID-9 · 2087
+              </div>
+              <h1 className="font-orbitron text-2xl lg:text-3xl text-white font-black">
+                АГЕНТ <span style={{ color: charColor }}>{character.name}</span>
+              </h1>
+              <div className="font-mono text-xs text-gray-600 mt-0.5">
+                АКТ {character.current_chapter} · {prog.sessionsCount} сессий
+              </div>
+            </div>
+
+            {/* 4 stat cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Уровень', value: character.level,   color: charColor,  icon: '⭐' },
+                { label: 'XP',      value: `${character.xp}/${character.xp_to_next}`, color: '#00ffff', icon: '◆', bar: xpPct },
+                { label: 'HP',      value: `${character.hp}/${character.max_hp}`,      color: '#ff4060', icon: '❤', bar: hpPct },
+                { label: 'Creds',   value: character.coins,   color: '#ffaa00',  icon: '⚡' },
+              ].map(s => (
+                <div key={s.label} className="border p-3 transition-all"
+                  style={{ borderColor: s.color + '25', backgroundColor: s.color + '05' }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs">{s.icon}</span>
+                    <span className="font-mono text-[9px] text-gray-600">{s.label}</span>
                   </div>
-                  <span className="font-mono text-[10px]" style={{ color: task.done ? task.color : '#555' }}>
-                    {task.label}
-                  </span>
+                  <div className="font-orbitron text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                  {'bar' in s && s.bar !== undefined && (
+                    <div className="mt-1.5 h-1 bg-black/60">
+                      <div className="h-full transition-all" style={{ width: `${s.bar}%`, backgroundColor: s.color, boxShadow: `0 0 4px ${s.color}` }} />
+                    </div>
+                  )}
                 </div>
-                <div className="h-1 bg-black/60">
-                  <div className="h-full transition-all"
-                    style={{ width: `${Math.min(100, (task.current / task.goal) * 100)}%`, backgroundColor: task.color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Global stats bar */}
-        <div className="mb-8 grid grid-cols-4 gap-2">
-          {[
-            { label: 'Уроков', value: prog.lessonsCompleted.length, icon: '📚', color: '#00ff41' },
-            { label: 'Побед', value: prog.battlesWon, icon: '⚔️', color: '#ff00ff' },
-            { label: 'Данжей', value: prog.dungeonsCompleted.length, icon: '🏰', color: '#ffaa00' },
-            { label: 'Серия', value: prog.battlesStreak, icon: '🔥', color: '#ff4060' },
-          ].map(s => (
-            <div key={s.label} className="border border-white/5 p-3 text-center">
-              <div className="text-lg mb-0.5">{s.icon}</div>
-              <div className="font-orbitron text-base font-black" style={{ color: s.color }}>{s.value}</div>
-              <div className="font-mono text-[9px] text-gray-600">{s.label}</div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Quick actions */}
-        <div className="mb-10">
-          <div className="font-mono text-xs text-gray-600 mb-4 tracking-widest">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { icon: '🗺️', title: 'Карта города', desc: 'CodeGrid-9 на карте — районы, фракции, миссии.', color: '#00ffff', section: 'map', btn: 'НА КАРТУ' },
-              { icon: '📡', title: 'Уроки Python', desc: 'Теория + практика. Читай, смотри примеры, пиши код.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
-              { icon: '💬', title: 'Агенты Archive', desc: 'Диалоги с NPC: PYTH-0N, K4I, Void Trader. Лор + награды.', color: '#00ff41', section: 'npc', btn: 'ГОВОРИТЬ' },
-              { icon: '📜', title: 'Квесты', desc: 'Сюжетные и обучающие задания от The Archive.', color: '#00aaff', section: 'quests', btn: 'МИССИИ' },
-              { icon: '🏆', title: 'Достижения', desc: 'Python, бои, исследования — 18+ ачивок с наградами.', color: '#ffff00', section: 'achievements', btn: 'СМОТРЕТЬ' },
-              { icon: '⚔️', title: 'Code Combat', desc: 'Сражайся с NEXUS кодом. Action Phase 12 секунд.', color: '#ff00ff', section: 'battle', btn: 'В БОЙ' },
-              { icon: '🏰', title: 'Подземелья', desc: 'Тесты по Python с выбором ответов. Зарабатывай лут.', color: '#ffaa00', section: 'dungeon', btn: 'ВОЙТИ' },
-              { icon: '🔨', title: 'Крафт', desc: 'Создавай уникальные импланты из ресурсов миссий.', color: '#aa00ff', section: 'crafting', btn: 'СОЗДАВАТЬ' },
-              { icon: '🌑', title: 'Чёрный Рынок', desc: 'Void Relic, Neon Core, Glitch Box — имплант-лут.', color: '#aa00ff', section: 'shop', btn: 'ТОРГОВАТЬ' },
-            ].map(item => (
-              <div key={item.section}
-                className="cyber-panel p-5 cursor-pointer group hover:-translate-y-1 transition-all duration-200"
-                style={{ borderColor: item.color + '20' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = item.color + '60'; (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${item.color}15`; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = item.color + '20'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
-              >
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{item.icon}</div>
-                <div className="font-orbitron text-white text-base mb-1">{item.title}</div>
-                <div className="text-gray-500 font-rajdhani text-sm mb-4 leading-snug">{item.desc}</div>
-                <button
-                  onClick={() => onNavigate(item.section)}
-                  className="font-orbitron text-xs px-4 py-2 border transition-all"
-                  style={{ borderColor: item.color, color: item.color, backgroundColor: item.color + '10' }}
-                >
-                  {item.btn}
-                </button>
+            {/* Daily tasks */}
+            <div className="border border-white/5 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-mono text-[10px] text-gray-600 tracking-widest">// СЕГОДНЯ</div>
+                <div className="font-mono text-[10px]" style={{ color: dailyDone === 3 ? '#00ff41' : '#555' }}>
+                  {dailyDone}/3 {dailyDone === 3 ? '✓ ВСЁ ГОТОВО' : 'выполнено'}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="grid grid-cols-3 gap-2">
+                {dailyTasks.map(t => (
+                  <button key={t.label} onClick={() => onNavigate(t.section)}
+                    className="flex flex-col items-center gap-1.5 p-2.5 border transition-all hover:scale-105"
+                    style={{
+                      borderColor: t.done ? t.color + '60' : '#1a1a1a',
+                      backgroundColor: t.done ? t.color + '10' : 'transparent',
+                    }}>
+                    <span className="text-xl">{t.icon}</span>
+                    <span className="font-mono text-[9px]" style={{ color: t.done ? t.color : '#444' }}>{t.label}</span>
+                    <div className="w-full h-0.5 bg-black/60">
+                      <div className="h-full transition-all" style={{ width: t.done ? '100%' : '0%', backgroundColor: t.color }} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {/* Equipped gear preview */}
-        {Object.values(character.equipment).some(Boolean) && (
-          <div>
-            <div className="font-mono text-xs text-gray-600 mb-4 tracking-widest">// ТЕКУЩАЯ ЭКИПИРОВКА</div>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(character.equipment).map(([slot, item]) => item && (
-                <div key={slot}
-                  className="border px-3 py-1.5 font-mono text-xs flex items-center gap-2"
-                  style={{
-                    borderColor: { common: '#aaa', uncommon: '#00ff41', rare: '#00aaff', epic: '#aa00ff', legendary: '#ffaa00' }[item.rarity] + '50',
-                    color: { common: '#aaa', uncommon: '#00ff41', rare: '#00aaff', epic: '#aa00ff', legendary: '#ffaa00' }[item.rarity],
-                  }}>
-                  <span className="text-gray-600">{{ head: '🪖', body: '🛡️', weapon: '⚔️', gloves: '🔧', boots: '👟', implant: '🔩' }[slot]}</span>
-                  {item.name}
+            {/* Global stats row */}
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: 'Уроков',  value: prog.lessonsCompleted.length, icon: '📚', color: '#00ff41' },
+                { label: 'Побед',   value: prog.battlesWon,              icon: '⚔️', color: '#ff00ff' },
+                { label: 'Данжей',  value: prog.dungeonsCompleted.length, icon: '🏰', color: '#ffaa00' },
+                { label: 'Серия',   value: prog.battlesStreak,           icon: '🔥', color: '#ff4060' },
+              ].map(s => (
+                <div key={s.label} className="border border-white/5 p-2.5 text-center hover:border-white/10 transition-all">
+                  <div className="text-base mb-0.5">{s.icon}</div>
+                  <div className="font-orbitron text-sm font-black" style={{ color: s.color }}>{s.value}</div>
+                  <div className="font-mono text-[9px] text-gray-600">{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* ═══ QUICK ACTIONS GRID ═══ */}
+        <div className="mb-2">
+          <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-4">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {ACTIONS.map(item => (
+              <button key={item.section}
+                onClick={() => onNavigate(item.section)}
+                className="group flex flex-col items-start gap-2 p-4 border text-left transition-all hover:-translate-y-0.5"
+                style={{ borderColor: item.color + '20', backgroundColor: 'transparent' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = item.color + '60';
+                  (e.currentTarget as HTMLElement).style.backgroundColor = item.color + '08';
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${item.color}12`;
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = item.color + '20';
+                  (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}>
+                <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
+                <div>
+                  <div className="font-orbitron text-xs font-black text-white">{item.title}</div>
+                  <div className="font-mono text-[9px] text-gray-600 mt-0.5">{item.desc}</div>
+                </div>
+                <div className="mt-auto font-mono text-[9px] transition-colors" style={{ color: item.color + '70' }}>
+                  → войти
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );

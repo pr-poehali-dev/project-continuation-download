@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame, InventoryItem } from '@/lib/GameContext';
 import { api } from '@/lib/api';
@@ -9,379 +9,427 @@ const RARITY_COLORS: Record<string, string> = {
 const RARITY_LABELS: Record<string, string> = {
   common: 'Обычный', uncommon: 'Необычный', rare: 'Редкий', epic: 'Эпический', legendary: 'Легендарный',
 };
-const SLOT_LABELS: Record<string, string> = {
-  head: 'Шлем', body: 'Броня', weapon: 'Оружие', gloves: 'Перчатки', boots: 'Ботинки', implant: 'Имплант',
-};
-const SLOT_ICONS: Record<string, string> = {
-  head: 'Crown', body: 'Shield', weapon: 'Zap', gloves: 'Hand', boots: 'Footprints', implant: 'Cpu',
-};
-const STAT_LABELS: Record<string, string> = {
-  strength: 'Сила', agility: 'Ловкость', intelligence: 'Интеллект', defense: 'Защита', luck: 'Удача',
-};
-const STAT_COLORS: Record<string, string> = {
-  strength: '#ff4060', agility: '#ffff00', intelligence: '#00ffff', defense: '#00ff41', luck: '#aa00ff',
+
+const SLOTS = ['head', 'body', 'weapon', 'gloves', 'boots', 'implant'] as const;
+type Slot = typeof SLOTS[number];
+
+const SLOT_META: Record<Slot, { label: string; icon: string; emoji: string }> = {
+  head:    { label: 'Шлем',      icon: 'Crown',      emoji: '🪖' },
+  body:    { label: 'Броня',     icon: 'Shield',     emoji: '🛡️' },
+  weapon:  { label: 'Оружие',    icon: 'Zap',        emoji: '⚔️' },
+  gloves:  { label: 'Перчатки',  icon: 'Hand',       emoji: '🔧' },
+  boots:   { label: 'Ботинки',   icon: 'Footprints', emoji: '👟' },
+  implant: { label: 'Имплант',   icon: 'Cpu',        emoji: '🔩' },
 };
 
-// Базовые картинки по классу
-const CLASS_BASE_IMG: Record<string, string> = {
-  hacker: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/c57f7ff6-a3a7-4783-8f10-0d9d80a09f23.jpg',
-  netrunner: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/2fd8ffba-85dd-4b30-aba1-ceb9dd168a5e.jpg',
-  street_samurai: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ba390b4d-c17b-4e41-933f-463af7aa414a.jpg',
+const STAT_META: { key: string; label: string; color: string; icon: string }[] = [
+  { key: 'strength',     label: 'Сила',       color: '#ff4060', icon: '💪' },
+  { key: 'agility',      label: 'Ловкость',   color: '#ffff00', icon: '⚡' },
+  { key: 'intelligence', label: 'Интеллект',  color: '#00ffff', icon: '🧠' },
+  { key: 'defense',      label: 'Защита',     color: '#00ff41', icon: '🛡️' },
+  { key: 'luck',         label: 'Удача',      color: '#aa00ff', icon: '🎲' },
+];
+
+// Картинки персонажей по классу — мужские (default)
+const CLASS_IMG: Record<string, string> = {
+  cipher:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
+  data_ghost:       'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
+  neural_architect: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
+  // обратная совместимость
+  hacker:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
+  netrunner:        'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
+  street_samurai:   'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
 };
 
-// Слои экипировки: item_id → image url
-// Голова: шлем (item id 1=обруч, 2=визор, 3=шлем)
-// Тело: броня (5=жакет, 6=экзоскелет, 8=корп-доспех)
-// Оружие: (9=клинок v1, 11=вирус)
-type LayerStyle = {
-  top?: string | number; left?: string | number; right?: string | number; bottom?: string | number;
-  width?: string; height?: string; objectFit?: React.CSSProperties['objectFit'];
-  objectPosition?: string; opacity?: number; mixBlendMode?: React.CSSProperties['mixBlendMode'];
+const CLASS_COLOR: Record<string, string> = {
+  cipher: '#00ff41', data_ghost: '#00aaff', neural_architect: '#aa00ff',
+  hacker: '#00ff41', netrunner: '#00aaff', street_samurai: '#aa00ff',
 };
-const EQUIPMENT_LAYERS: Record<number, { url: string; slot: string; style?: LayerStyle }> = {
-  // head items — шлем-визор
-  1: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/808a5d7e-ab11-472f-b303-2eb0b17838b3.jpg', slot: 'head', style: { top: 0, left: 0, right: 0, height: '35%', objectFit: 'cover', objectPosition: 'top', opacity: 0.85, mixBlendMode: 'screen' } },
-  2: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/808a5d7e-ab11-472f-b303-2eb0b17838b3.jpg', slot: 'head', style: { top: 0, left: 0, right: 0, height: '35%', objectFit: 'cover', objectPosition: 'top', opacity: 0.9, mixBlendMode: 'screen' } },
-  3: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/808a5d7e-ab11-472f-b303-2eb0b17838b3.jpg', slot: 'head', style: { top: 0, left: 0, right: 0, height: '38%', objectFit: 'cover', objectPosition: 'top', opacity: 0.95, mixBlendMode: 'screen' } },
-  // body items — броня
-  5: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/d9e56ebb-a248-4552-b6f6-59083eb9a589.jpg', slot: 'body', style: { top: '30%', left: 0, right: 0, bottom: '20%', objectFit: 'cover', opacity: 0.75, mixBlendMode: 'screen' } },
-  6: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/d9e56ebb-a248-4552-b6f6-59083eb9a589.jpg', slot: 'body', style: { top: '28%', left: 0, right: 0, bottom: '18%', objectFit: 'cover', opacity: 0.85, mixBlendMode: 'screen' } },
-  7: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/8340a2dc-3e97-435f-bbfc-4e7b631e109b.jpg', slot: 'body', style: { top: '25%', left: 0, right: 0, bottom: '15%', objectFit: 'cover', opacity: 0.9, mixBlendMode: 'screen' } },
-  8: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/8340a2dc-3e97-435f-bbfc-4e7b631e109b.jpg', slot: 'body', style: { top: '22%', left: 0, right: 0, bottom: '12%', objectFit: 'cover', opacity: 0.95, mixBlendMode: 'screen' } },
-  // weapon items
-  9: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/bc18c7dc-e044-4163-bad8-2f635aa6a729.jpg', slot: 'weapon', style: { right: '-5%', top: '35%', width: '40%', height: '45%', objectFit: 'contain', opacity: 0.9 } },
-  10: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/bc18c7dc-e044-4163-bad8-2f635aa6a729.jpg', slot: 'weapon', style: { right: '-8%', top: '30%', width: '42%', height: '50%', objectFit: 'contain', opacity: 0.95 } },
-  11: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/bc18c7dc-e044-4163-bad8-2f635aa6a729.jpg', slot: 'weapon', style: { right: '-10%', top: '28%', width: '45%', height: '52%', objectFit: 'contain', opacity: 1 } },
-  12: { url: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/bc18c7dc-e044-4163-bad8-2f635aa6a729.jpg', slot: 'weapon', style: { right: '-10%', top: '25%', width: '48%', height: '55%', objectFit: 'contain', opacity: 1 } },
+
+const CLASS_LABEL: Record<string, string> = {
+  cipher: 'CIPHER', data_ghost: 'DATA GHOST', neural_architect: 'NEURAL ARCHITECT',
+  hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
 };
 
 export default function CharacterProfile() {
   const { character, inventory, refreshInventory, setCharacter } = useGame();
-  const [activeTab, setActiveTab] = useState<'stats' | 'equipment' | 'inventory'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'equipment' | 'inventory'>('equipment');
   const [equipLoading, setEquipLoading] = useState<number | null>(null);
   const [unequipLoading, setUnequipLoading] = useState<string | null>(null);
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => { refreshInventory(); }, []);
 
   if (!character) return null;
 
-  const xpPct = Math.round((character.xp / character.xp_to_next) * 100);
-  const hpPct = Math.round((character.hp / character.max_hp) * 100);
-  const baseImg = CLASS_BASE_IMG[character.class] || CLASS_BASE_IMG.hacker;
-  const classColor: Record<string, string> = { hacker: '#00ffff', netrunner: '#ff00ff', street_samurai: '#ffff00' };
-  const charColor = classColor[character.class] || '#00ffff';
+  const charColor = CLASS_COLOR[character.class] || '#00ff41';
+  const charImg   = CLASS_IMG[character.class]   || CLASS_IMG.cipher;
+  const xpPct     = Math.round((character.xp / character.xp_to_next) * 100);
+  const hpPct     = Math.round((character.hp / character.max_hp) * 100);
+
+  // Лучшая редкость надетого
+  const equippedItems = Object.values(character.equipment).filter(Boolean);
+  const rarityOrder   = ['legendary','epic','rare','uncommon','common'];
+  const bestRarity    = rarityOrder.find(r => equippedItems.some(e => e?.rarity === r));
+  const glowColor     = bestRarity
+    ? RARITY_COLORS[bestRarity]
+    : charColor;
+
+  const showMsg = (text: string, ok = true) => {
+    setMsg({ text, ok });
+    setTimeout(() => setMsg(null), 2500);
+  };
 
   const equip = async (item: InventoryItem) => {
     setEquipLoading(item.item_id);
     const data = await api.character.equip(item.item_id);
     setEquipLoading(null);
-    if (data.error) { setMsg('⚠ ' + data.error); setTimeout(() => setMsg(''), 3000); return; }
+    if (data.error) { showMsg('⚠ ' + data.error, false); return; }
     setCharacter(data);
-    setMsg(`✅ ${item.name} надет!`);
-    setTimeout(() => setMsg(''), 2500);
+    showMsg(`✅ ${item.name} надет`);
   };
 
   const unequip = async (slot: string) => {
     setUnequipLoading(slot);
     const data = await api.character.unequip(slot);
     setUnequipLoading(null);
-    if (data.error) { setMsg('⚠ ' + data.error); setTimeout(() => setMsg(''), 3000); return; }
+    if (data.error) { showMsg('⚠ ' + data.error, false); return; }
     setCharacter(data);
-    setMsg('✅ Предмет снят');
-    setTimeout(() => setMsg(''), 2500);
+    showMsg('✅ Предмет снят');
   };
 
-  // Собираем активные слои от экипировки
-  const activeEquipLayers = Object.values(character.equipment)
-    .filter(Boolean)
-    .map(e => e && EQUIPMENT_LAYERS[e.id])
-    .filter(Boolean);
-
-  // Подсветка цветом экипировки
-  const equipGlowColor = (() => {
-    const equipped = Object.values(character.equipment).filter(Boolean);
-    if (!equipped.length) return charColor;
-    const rarityOrder = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
-    const best = rarityOrder.find(r => equipped.some(e => e?.rarity === r));
-    const rarityColors: Record<string, string> = { legendary: '#ffaa00', epic: '#aa00ff', rare: '#00aaff', uncommon: '#00ff41', common: '#aaaaaa' };
-    return rarityColors[best || 'common'];
-  })();
+  // Предметы инвентаря, которые можно надеть
+  const equipableItems = inventory.filter(i => i.item_type === 'equipment' || SLOTS.includes(i.slot as Slot));
 
   return (
-    <section className="py-8 px-4 lg:px-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <div className="text-xs font-mono tracking-widest mb-1" style={{ color: charColor + '99' }}>// ПРОФИЛЬ</div>
+    <section className="min-h-screen py-8 px-4 lg:px-6 relative">
+      <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
+      <div className="max-w-6xl mx-auto relative z-10">
+
+        {/* Header */}
+        <div className="mb-6">
+          <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-1">// CODEGRID-9 · ПРОФИЛЬ АГЕНТА</div>
           <h2 className="font-orbitron text-2xl text-white">ПЕРСОНАЖ</h2>
         </div>
 
+        {/* Toast */}
         {msg && (
-          <div className="mb-4 font-mono text-sm text-cyber-green animate-fade-in-up border border-cyber-green/30 bg-cyber-green/5 px-4 py-2">{msg}</div>
+          <div className={`mb-4 font-mono text-sm px-4 py-2 border animate-fade-in-up ${msg.ok ? 'text-cyber-green border-cyber-green/30 bg-cyber-green/5' : 'text-red-400 border-red-500/30 bg-red-500/5'}`}>
+            {msg.text}
+          </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* === CHARACTER VISUAL === */}
-          <div className="flex-shrink-0 flex flex-col items-center gap-4">
-            {/* Layered character display */}
+        {/* ─── Main layout ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+
+          {/* ══ LEFT: Portrait + bars ══ */}
+          <div className="flex flex-col gap-4">
+
+            {/* Portrait */}
             <div className="relative">
               <div
-                className="w-52 h-72 relative overflow-hidden border-2 transition-all duration-500"
+                className="w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden border-2 relative"
                 style={{
-                  borderColor: equipGlowColor,
-                  boxShadow: `0 0 30px ${equipGlowColor}25, 0 0 60px ${equipGlowColor}10`,
-                  clipPath: 'polygon(0 0, 90% 0, 100% 10%, 100% 100%, 10% 100%, 0 90%)',
+                  borderColor: glowColor + '80',
+                  boxShadow: `0 0 40px ${glowColor}20, 0 0 80px ${glowColor}08`,
+                  clipPath: 'polygon(0 0, 92% 0, 100% 8%, 100% 100%, 8% 100%, 0 92%)',
                   backgroundColor: '#050a0e',
                 }}
               >
-                {/* Base character image */}
-                <img src={baseImg} alt={character.name}
-                  className="absolute inset-0 w-full h-full object-cover object-top" />
-
-                {/* Equipment overlay layers */}
-                {activeEquipLayers.map((layer, idx) => layer && (
-                  <img
-                    key={idx}
-                    src={layer.url}
-                    alt="equipment layer"
-                    className="absolute transition-opacity duration-300"
-                    style={layer.style as React.CSSProperties}
-                  />
-                ))}
-
-                {/* Rarity glow border animated */}
-                {Object.values(character.equipment).some(Boolean) && (
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `linear-gradient(180deg, ${equipGlowColor}08 0%, transparent 40%, transparent 70%, ${equipGlowColor}12 100%)`,
-                    }}
-                  />
-                )}
-
-                {/* Equipment indicator dots */}
-                <div className="absolute top-2 right-2 flex flex-col gap-1">
-                  {Object.entries(character.equipment).map(([slot, item]) => item && (
-                    <div key={slot} className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: RARITY_COLORS[item.rarity], boxShadow: `0 0 4px ${RARITY_COLORS[item.rarity]}` }} />
-                  ))}
+                <img
+                  src={charImg}
+                  alt={character.name}
+                  className="w-full h-full object-cover object-top"
+                />
+                {/* Bottom gradient overlay */}
+                <div className="absolute inset-0" style={{
+                  background: `linear-gradient(to top, rgba(5,10,14,0.95) 0%, rgba(5,10,14,0.4) 35%, transparent 60%)`
+                }} />
+                {/* Name overlay */}
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="font-orbitron text-white text-lg font-black leading-tight drop-shadow-lg">
+                    {character.name}
+                  </div>
+                  <div className="font-mono text-xs mt-0.5" style={{ color: charColor }}>
+                    {CLASS_LABEL[character.class] ?? character.class.toUpperCase()}
+                  </div>
+                </div>
+                {/* Level badge */}
+                <div
+                  className="absolute top-3 right-3 px-2.5 py-1 font-orbitron text-xs font-black border"
+                  style={{ color: charColor, borderColor: charColor, backgroundColor: '#050a0ecc', boxShadow: `0 0 10px ${charColor}30` }}
+                >
+                  LVL {character.level}
                 </div>
               </div>
-
-              {/* Level badge */}
-              <div
-                className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 font-orbitron text-sm whitespace-nowrap border"
-                style={{ color: charColor, borderColor: charColor, backgroundColor: '#050a0e', boxShadow: `0 0 12px ${charColor}30` }}
-              >
-                LVL {character.level}
-              </div>
             </div>
 
-            {/* Name & class */}
-            <div className="mt-4 text-center">
-              <div className="font-orbitron text-white text-lg">{character.name}</div>
-              <div className="font-mono text-xs mt-0.5 capitalize" style={{ color: charColor }}>
-                {character.class.replace('_', ' ')} · Глава {character.current_chapter}
-              </div>
-            </div>
-
-            {/* Bars */}
-            <div className="w-52 space-y-2">
+            {/* HP / XP bars */}
+            <div className="space-y-3">
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
-                  <span className="text-red-400">HP</span>
-                  <span className="text-red-400">{character.hp}/{character.max_hp}</span>
+                <div className="flex justify-between font-mono text-xs mb-1">
+                  <span className="text-red-400">❤ HP</span>
+                  <span className="text-red-400">{character.hp} / {character.max_hp}</span>
                 </div>
-                <div className="h-2 bg-black/60 w-full border border-red-500/20">
-                  <div className="h-full transition-all duration-500"
-                    style={{ width: `${hpPct}%`, backgroundColor: '#ff4060', boxShadow: '0 0 6px #ff406080' }} />
+                <div className="h-2.5 bg-black/70 border border-red-500/20 overflow-hidden">
+                  <div className="h-full transition-all duration-700"
+                    style={{ width: `${hpPct}%`, backgroundColor: '#ff4060', boxShadow: '0 0 8px #ff406080' }} />
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
-                  <span style={{ color: charColor }}>XP</span>
-                  <span style={{ color: charColor }}>{character.xp}/{character.xp_to_next}</span>
+                <div className="flex justify-between font-mono text-xs mb-1">
+                  <span style={{ color: charColor }}>◆ XP</span>
+                  <span style={{ color: charColor }}>{character.xp} / {character.xp_to_next}</span>
                 </div>
-                <div className="h-2 bg-black/60 w-full border border-cyber-cyan/10">
-                  <div className="h-full transition-all duration-500"
-                    style={{ width: `${xpPct}%`, backgroundColor: charColor, boxShadow: `0 0 6px ${charColor}60` }} />
+                <div className="h-2.5 bg-black/70 overflow-hidden" style={{ border: `1px solid ${charColor}20` }}>
+                  <div className="h-full transition-all duration-700"
+                    style={{ width: `${xpPct}%`, backgroundColor: charColor, boxShadow: `0 0 8px ${charColor}60` }} />
                 </div>
               </div>
             </div>
 
-            {/* Coins */}
-            <div className="w-52 border border-yellow-500/20 bg-yellow-500/5 py-2 text-center">
-              <span className="font-orbitron text-yellow-400 text-lg">🪙 {character.coins}</span>
-              <span className="text-gray-600 font-mono text-xs ml-2">монет</span>
+            {/* Creds */}
+            <div className="border border-yellow-500/25 bg-yellow-500/5 px-4 py-3 flex items-center justify-between">
+              <span className="font-mono text-[11px] text-gray-600">КРЕДИТЫ</span>
+              <span className="font-orbitron text-yellow-400 text-lg font-black">⚡ {character.coins}</span>
             </div>
 
-            {/* Equipped items quick view */}
-            <div className="w-52">
-              <div className="font-mono text-[10px] text-gray-600 mb-2 tracking-widest">// НАДЕТО</div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {Object.entries(SLOT_LABELS).map(([slot]) => {
-                  const item = character.equipment[slot];
-                  const color = item ? RARITY_COLORS[item.rarity] : '#1a1a1a';
-                  return (
-                    <div
-                      key={slot}
-                      title={item ? `${item.name} (${SLOT_LABELS[slot]})` : SLOT_LABELS[slot]}
-                      className="aspect-square flex items-center justify-center border transition-all cursor-default"
-                      style={{ borderColor: color + (item ? '60' : '30'), backgroundColor: color + (item ? '15' : '05') }}
-                    >
-                      {item ? (
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}` }} />
-                      ) : (
-                        <Icon name={SLOT_ICONS[slot] as 'Crown'} size={12} style={{ color: '#2a2a2a' }} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            {/* Chapter */}
+            <div className="border border-white/5 px-4 py-3 flex items-center justify-between">
+              <span className="font-mono text-[11px] text-gray-600">ГЛАВА</span>
+              <span className="font-orbitron text-white text-sm">{character.current_chapter}</span>
             </div>
           </div>
 
-          {/* === TABS === */}
-          <div className="flex-1 min-w-0">
-            <div className="flex border-b border-white/8 mb-4">
-              {[
-                { id: 'stats', label: 'СТАТЫ' },
-                { id: 'equipment', label: 'ЭКИПИРОВКА' },
-                { id: 'inventory', label: `ИНВЕНТАРЬ (${inventory.length})` },
-              ].map(t => (
-                <button key={t.id} onClick={() => setActiveTab(t.id as typeof activeTab)}
-                  className={`px-4 py-2.5 font-orbitron text-xs tracking-wider transition-all border-b-2 ${
-                    activeTab === t.id
-                      ? 'border-b-cyber-cyan text-cyber-cyan'
-                      : 'border-transparent text-gray-600 hover:text-gray-400'
-                  }`}>
-                  {t.label}
+          {/* ══ RIGHT: Tabs ══ */}
+          <div className="flex flex-col">
+
+            {/* Tab bar */}
+            <div className="flex border-b border-white/8 mb-5">
+              {([
+                { id: 'equipment', label: 'Экипировка',  icon: 'Shield' },
+                { id: 'stats',     label: 'Характеристики', icon: 'BarChart2' },
+                { id: 'inventory', label: 'Инвентарь',   icon: 'Package' },
+              ] as const).map(tab => (
+                <button key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="flex items-center gap-2 px-5 py-3 font-mono text-xs transition-all border-b-2"
+                  style={{
+                    color: activeTab === tab.id ? charColor : '#555',
+                    borderBottomColor: activeTab === tab.id ? charColor : 'transparent',
+                    backgroundColor: activeTab === tab.id ? charColor + '08' : 'transparent',
+                  }}>
+                  <Icon name={tab.icon} size={13} />
+                  {tab.label.toUpperCase()}
                 </button>
               ))}
             </div>
 
-            {/* STATS tab */}
-            {activeTab === 'stats' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Object.entries(character.effective_stats).map(([stat, val]) => {
-                  const base = character.base_stats[stat] || 0;
-                  const bonus = character.equipment_bonuses[stat] || 0;
-                  const color = STAT_COLORS[stat] || '#00ffff';
-                  return (
-                    <div key={stat} className="cyber-panel p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono text-xs text-gray-500">{STAT_LABELS[stat]}</span>
-                        <div className="flex items-center gap-1.5">
-                          {bonus > 0 && <span className="font-mono text-xs text-cyber-green">+{bonus}</span>}
-                          <span className="font-orbitron text-base font-bold" style={{ color }}>{val}</span>
-                        </div>
-                      </div>
-                      <div className="h-1.5 bg-black/50">
-                        <div className="h-full transition-all duration-700"
-                          style={{ width: `${Math.min((val / 30) * 100, 100)}%`, background: `linear-gradient(90deg, ${color}50, ${color})`, boxShadow: `0 0 8px ${color}50` }} />
-                      </div>
-                      <div className="text-gray-700 text-[10px] font-mono mt-1">База: {base}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* EQUIPMENT tab */}
+            {/* ── TAB: EQUIPMENT ── */}
             {activeTab === 'equipment' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Object.entries(SLOT_LABELS).map(([slot, label]) => {
-                  const item = character.equipment[slot];
-                  const color = item ? RARITY_COLORS[item.rarity] : '#222';
-                  return (
-                    <div key={slot} className="cyber-panel p-3 flex items-center gap-3 transition-all"
-                      style={{ borderColor: item ? color + '50' : '#ffffff08' }}>
-                      <div className="w-10 h-10 flex items-center justify-center border flex-shrink-0 transition-all"
-                        style={{ borderColor: color + '50', backgroundColor: color + '10' }}>
-                        <Icon name={SLOT_ICONS[slot] as 'Crown'} size={18} style={{ color: item ? color : '#333' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-gray-600 text-[10px] font-mono tracking-wide">{label}</div>
+              <div>
+                <div className="font-mono text-[10px] text-gray-600 mb-4 tracking-widest">
+                  // СЛОТЫ ЭКИПИРОВКИ — нажми надетый предмет чтобы снять
+                </div>
+
+                {/* 6 slots grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                  {SLOTS.map(slot => {
+                    const item = character.equipment[slot];
+                    const meta = SLOT_META[slot];
+                    const color = item ? RARITY_COLORS[item.rarity] : '#222';
+                    const isUnequipping = unequipLoading === slot;
+                    return (
+                      <div key={slot}
+                        className="border p-3 transition-all relative group"
+                        style={{
+                          borderColor: item ? color + '60' : '#1a1a1a',
+                          backgroundColor: item ? color + '08' : '#0a0a0a',
+                        }}>
+                        {/* Slot header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-base">{meta.emoji}</span>
+                          <span className="font-mono text-[10px] text-gray-600">{meta.label.toUpperCase()}</span>
+                        </div>
+
                         {item ? (
-                          <>
-                            <div className="font-rajdhani text-sm font-semibold leading-tight truncate" style={{ color }}>{item.name}</div>
-                            <div className="font-mono text-[10px] text-gray-600">{RARITY_LABELS[item.rarity]}</div>
-                            <div className="font-mono text-[10px] text-cyber-green">
-                              {Object.entries(item.stat_bonus).map(([s, v]) => `+${v} ${STAT_LABELS[s]}`).join(' ')}
+                          /* Надет предмет */
+                          <div>
+                            <div className="font-rajdhani text-sm font-semibold leading-tight mb-1"
+                              style={{ color }}>
+                              {item.name}
                             </div>
-                          </>
+                            <div className="font-mono text-[9px] mb-2" style={{ color: color + '80' }}>
+                              {RARITY_LABELS[item.rarity]}
+                            </div>
+                            {/* Бонусы */}
+                            {item.stats && Object.entries(item.stats).filter(([,v]) => v).map(([k, v]) => (
+                              <div key={k} className="font-mono text-[9px] text-gray-600">
+                                +{v} {k}
+                              </div>
+                            ))}
+                            {/* Кнопка снять */}
+                            <button
+                              onClick={() => unequip(slot)}
+                              disabled={isUnequipping}
+                              className="mt-2 w-full font-mono text-[9px] py-1 border transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                              style={{ borderColor: '#ff406050', color: '#ff4060', backgroundColor: '#ff406010' }}>
+                              {isUnequipping ? '...' : 'СНЯТЬ'}
+                            </button>
+                          </div>
                         ) : (
-                          <div className="text-gray-700 text-xs font-mono italic mt-0.5">Пусто</div>
+                          /* Пустой слот */
+                          <div className="flex flex-col items-center justify-center py-3 gap-1">
+                            <Icon name={meta.icon as 'Shield'} size={20} style={{ color: '#2a2a2a' }} />
+                            <span className="font-mono text-[9px] text-gray-700">пусто</span>
+                          </div>
                         )}
                       </div>
-                      {item && (
-                        <button onClick={() => unequip(slot)} disabled={unequipLoading === slot}
-                          className="text-gray-700 hover:text-red-400 transition-colors flex-shrink-0 p-1" title="Снять">
-                          <Icon name="X" size={14} />
-                        </button>
-                      )}
+                    );
+                  })}
+                </div>
+
+                {/* Summary */}
+                {equippedItems.length > 0 && (
+                  <div className="border border-white/5 p-4">
+                    <div className="font-mono text-[10px] text-gray-600 mb-3 tracking-widest">// СУММАРНЫЕ БОНУСЫ</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {STAT_META.map(s => {
+                        const bonus = equippedItems.reduce((acc, item) => {
+                          return acc + ((item?.stats?.[s.key] as number) || 0);
+                        }, 0);
+                        if (!bonus) return null;
+                        return (
+                          <div key={s.key} className="flex items-center gap-2">
+                            <span className="text-sm">{s.icon}</span>
+                            <div>
+                              <div className="font-mono text-[9px] text-gray-600">{s.label}</div>
+                              <div className="font-orbitron text-xs font-black" style={{ color: s.color }}>+{bonus}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* INVENTORY tab */}
-            {activeTab === 'inventory' && (
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                {inventory.length === 0 ? (
-                  <div className="text-center py-12 text-gray-600 font-mono text-sm">
-                    <div className="text-4xl mb-3">📦</div>
-                    Инвентарь пуст<br />
-                    <span className="text-xs">Победи врагов или купи предметы в магазине</span>
-                  </div>
-                ) : inventory.map(item => {
-                  const color = RARITY_COLORS[item.rarity] || '#aaa';
-                  const isEquipped = Object.values(character.equipment).some(e => e?.id === item.item_id);
-                  const hasLayer = !!EQUIPMENT_LAYERS[item.item_id];
+            {/* ── TAB: STATS ── */}
+            {activeTab === 'stats' && (
+              <div className="space-y-3">
+                <div className="font-mono text-[10px] text-gray-600 mb-2 tracking-widest">// ХАРАКТЕРИСТИКИ ПЕРСОНАЖА</div>
+                {STAT_META.map(s => {
+                  const base = (character.stats?.[s.key] as number) || 0;
+                  const bonus = equippedItems.reduce((acc, item) => acc + ((item?.stats?.[s.key] as number) || 0), 0);
+                  const total = base + bonus;
+                  const pct   = Math.min(100, (total / 25) * 100);
                   return (
-                    <div key={item.inv_id}
-                      className="cyber-panel p-3 flex items-center gap-3 transition-all"
-                      style={{ borderColor: isEquipped ? color + '60' : '#ffffff08' }}>
-                      <div className="w-10 h-10 flex items-center justify-center border flex-shrink-0"
-                        style={{ borderColor: color + '50', backgroundColor: color + '10' }}>
-                        <span style={{ color }} className="text-base">
-                          {item.type === 'weapon' ? '⚔️' : item.type === 'head' ? '🪖' : item.type === 'body' ? '🛡️' : item.type === 'implant' ? '🔩' : '🔧'}
-                        </span>
+                    <div key={s.key} className="flex items-center gap-3">
+                      <span className="text-base w-6 text-center flex-shrink-0">{s.icon}</span>
+                      <span className="font-mono text-xs text-gray-500 w-24 flex-shrink-0">{s.label}</span>
+                      <div className="flex-1 h-2.5 bg-black/60 border overflow-hidden" style={{ borderColor: s.color + '20' }}>
+                        <div className="h-full transition-all duration-700"
+                          style={{ width: `${pct}%`, backgroundColor: s.color, boxShadow: `0 0 6px ${s.color}60` }} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-rajdhani text-sm font-semibold" style={{ color }}>{item.name}</span>
-                          {isEquipped && <span className="text-cyber-green text-[10px] font-mono">▶ НАДЕТО</span>}
-                          {hasLayer && !isEquipped && <span className="text-cyber-cyan text-[10px] font-mono">👁 слой</span>}
-                        </div>
-                        <div className="text-gray-600 text-[10px] font-mono">
-                          {RARITY_LABELS[item.rarity]} · {SLOT_LABELS[item.type]}
-                        </div>
-                        <div className="text-cyber-green text-[10px] font-mono">
-                          {Object.entries(item.stat_bonus).map(([s, v]) => `+${v} ${STAT_LABELS[s]}`).join(' ')}
-                        </div>
+                      <div className="w-12 text-right">
+                        <span className="font-orbitron text-sm font-black" style={{ color: s.color }}>{total}</span>
+                        {bonus > 0 && (
+                          <span className="font-mono text-[9px] text-gray-600 ml-1">(+{bonus})</span>
+                        )}
                       </div>
-                      {!isEquipped && (
-                        <button onClick={() => equip(item)} disabled={equipLoading === item.item_id}
-                          className="font-orbitron text-xs px-3 py-1.5 border transition-all flex-shrink-0 disabled:opacity-40"
-                          style={{ borderColor: color, color, backgroundColor: color + '10' }}>
-                          {equipLoading === item.item_id ? '...' : 'НАДЕТЬ'}
-                        </button>
-                      )}
-                      {isEquipped && (
-                        <button onClick={() => unequip(item.type)} disabled={unequipLoading === item.type}
-                          className="font-orbitron text-xs px-3 py-1.5 border border-red-500/40 text-red-400 transition-all flex-shrink-0 disabled:opacity-40">
-                          СНЯТЬ
-                        </button>
-                      )}
                     </div>
                   );
                 })}
+
+                {/* Level info */}
+                <div className="mt-6 border border-white/5 p-4 grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Уровень', value: character.level, color: charColor },
+                    { label: 'Глава',   value: character.current_chapter, color: '#00ffff' },
+                    { label: 'Макс HP', value: character.max_hp, color: '#ff4060' },
+                    { label: 'Монеты',  value: character.coins, color: '#ffaa00' },
+                  ].map(s => (
+                    <div key={s.label}>
+                      <div className="font-mono text-[10px] text-gray-600 mb-0.5">{s.label}</div>
+                      <div className="font-orbitron text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* ── TAB: INVENTORY ── */}
+            {activeTab === 'inventory' && (
+              <div>
+                <div className="font-mono text-[10px] text-gray-600 mb-4 tracking-widest">
+                  // ИНВЕНТАРЬ — нажми предмет чтобы надеть
+                </div>
+                {equipableItems.length === 0 ? (
+                  <div className="text-center py-16 text-gray-600 font-mono text-sm">
+                    <div className="text-4xl mb-3">📦</div>
+                    <div>Инвентарь пуст</div>
+                    <div className="text-[10px] mt-1 text-gray-700">Зарабатывай предметы в подземельях и в магазине</div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {equipableItems.map(item => {
+                      const color = RARITY_COLORS[item.rarity] || '#aaa';
+                      const isEquipped = Object.values(character.equipment).some(e => e?.id === item.item_id);
+                      const isLoading = equipLoading === item.item_id;
+                      return (
+                        <div key={item.item_id}
+                          className="border p-3 transition-all flex items-start gap-3"
+                          style={{
+                            borderColor: isEquipped ? color + '60' : color + '25',
+                            backgroundColor: isEquipped ? color + '08' : 'transparent',
+                          }}>
+                          {/* Item icon */}
+                          <div className="w-10 h-10 border flex items-center justify-center flex-shrink-0 text-lg"
+                            style={{ borderColor: color + '40', backgroundColor: color + '10' }}>
+                            {item.slot === 'head' ? '🪖' : item.slot === 'body' ? '🛡️' : item.slot === 'weapon' ? '⚔️' : item.slot === 'implant' ? '🔩' : item.slot === 'boots' ? '👟' : '🔧'}
+                          </div>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-rajdhani text-sm font-semibold" style={{ color }}>{item.name}</div>
+                            <div className="font-mono text-[9px]" style={{ color: color + '80' }}>{RARITY_LABELS[item.rarity]} · {SLOT_META[item.slot as Slot]?.label ?? item.slot}</div>
+                            {item.stats && (
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {Object.entries(item.stats).filter(([,v]) => v).map(([k,v]) => (
+                                  <span key={k} className="font-mono text-[9px] text-gray-600">+{v as number} {k}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* Action */}
+                          <div className="flex-shrink-0">
+                            {isEquipped ? (
+                              <button
+                                onClick={() => unequip(item.slot)}
+                                className="font-mono text-[9px] px-2 py-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all">
+                                СНЯТЬ
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => equip(item)}
+                                disabled={isLoading}
+                                className="font-mono text-[9px] px-2 py-1 border transition-all disabled:opacity-50"
+                                style={{ borderColor: color + '50', color, backgroundColor: color + '10' }}>
+                                {isLoading ? '...' : 'НАДЕТЬ'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
+
       </div>
     </section>
   );
