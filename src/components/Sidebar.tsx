@@ -24,15 +24,18 @@ const NAV_ITEMS = [
   { id: 'leaderboard',   label: 'Рейтинг',     icon: 'Trophy',      color: '#ffff00' },
 ];
 
-// GDD class mapping
+// Классы — новые имена + обратная совместимость
 const CLASS_EMOJI: Record<string, string> = {
+  cipher: '💀', data_ghost: '👁️', neural_architect: '🧠',
   hacker: '💀', netrunner: '🕶️', street_samurai: '⚡',
 };
 const CLASS_COLOR: Record<string, string> = {
-  hacker: '#00ff41', netrunner: '#ff00ff', street_samurai: '#6644ff',
+  cipher: '#00ff41', data_ghost: '#00aaff', neural_architect: '#aa00ff',
+  hacker: '#00ff41', netrunner: '#00aaff', street_samurai: '#aa00ff',
 };
 const CLASS_LABEL: Record<string, string> = {
-  hacker: 'Hacker', netrunner: 'Python-Junior', street_samurai: 'Python-Backend',
+  cipher: 'CIPHER', data_ghost: 'DATA GHOST', neural_architect: 'NEURAL ARCHITECT',
+  hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
 };
 
 export default function Sidebar({ activeSection, onNavigate, onCollapse }: SidebarProps) {

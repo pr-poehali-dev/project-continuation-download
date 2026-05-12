@@ -30,7 +30,8 @@ interface NPC {
   faction: string;
   factionColor: string;
   icon: string;
-  portrait: string;
+  portrait: string;   // emoji fallback
+  img?: string;       // real generated image
   location: string;
   desc: string;
   unlockLevel: number;
@@ -47,6 +48,7 @@ const NPCS: NPC[] = [
     factionColor: '#00ff41',
     icon: '🤖',
     portrait: '🤖',
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/be2e2504-ed7a-46f5-a3fa-670e1b704e6c.jpg',
     location: 'Undernet Hub',
     desc: 'Фрагментированный ИИ, хранящий знания запрещённого Python. Первый наставник каждого агента.',
     unlockLevel: 1,
@@ -152,6 +154,7 @@ const NPCS: NPC[] = [
     factionColor: '#00ff41',
     icon: '🕶️',
     portrait: '🕶️',
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/720593e1-ac8b-40f8-b17a-476018f70135.jpg',
     location: 'Archive Vault',
     desc: 'Легендарный хакер, основавший The Archive. Его считают мёртвым. NEXUS ошибается.',
     unlockLevel: 15,
@@ -214,6 +217,7 @@ const NPCS: NPC[] = [
     factionColor: '#555',
     icon: '🌑',
     portrait: '🌑',
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/72981f02-2ee5-4795-bd2b-c59fa0508d5e.jpg',
     location: 'Black Market',
     desc: 'Никто не знает откуда он. Торгует редкими материалами за информацию, а не за деньги.',
     unlockLevel: 10,
@@ -312,7 +316,14 @@ function DialogEngine({ npc, onClose }: DialogEngineProps) {
 
       {/* NPC header */}
       <div className="flex items-center gap-3 pb-3 border-b border-white/8">
-        <div className="text-4xl">{npc.portrait}</div>
+        {npc.img ? (
+          <div className="w-14 h-14 overflow-hidden border flex-shrink-0"
+            style={{ borderColor: npc.factionColor + '60', clipPath: 'polygon(0 0, 85% 0, 100% 15%, 100% 100%, 15% 100%, 0 85%)' }}>
+            <img src={npc.img} alt={npc.name} className="w-full h-full object-cover object-top" />
+          </div>
+        ) : (
+          <div className="text-4xl">{npc.portrait}</div>
+        )}
         <div>
           <div className="font-orbitron text-sm font-bold text-white">{npc.name}</div>
           <div className="font-mono text-[10px]" style={{ color: npc.factionColor + '90' }}>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import Editor from '@monaco-editor/react';
 import Icon from '@/components/ui/icon';
 import { useGame, XpResult } from '@/lib/GameContext';
@@ -456,6 +456,44 @@ const LESSONS: Lesson[] = [
     task: { desc: 'Добавь метод status() в класс Agent, возвращающий f"[{self.level}] {self.name}"', keywords: ['def', 'status', 'self', 'return', 'f"'], example: 'class Agent:\n    def __init__(self, name, level):\n        self.name = name\n        self.level = level\n    def status(self):\n        return f"[{self.level}] {self.name}"', output: '> [42] Nova_7\n[OK] Метод работает' } },
 ];
 
+// ─── Классово-специфичные уроки ──────────────────────────────────────────────
+
+const DATA_GHOST_LESSONS: Lesson[] = [
+  { id: 101, title: 'NumPy: массивы', chapter: 'DS · М1', act: 1, xp: 250, completed: false, locked: false, icon: '🔢',
+    desc: 'NumPy — основа научных вычислений. Быстрые массивы вместо списков.',
+    task: { desc: 'Создай numpy массив из чисел 1..5 и вычисли его среднее через np.mean()', keywords: ['import numpy', 'np.array', 'np.mean', 'print'], example: 'import numpy as np\narr = np.array([1, 2, 3, 4, 5])\nprint(np.mean(arr))', output: '> 3.0\n[OK] NumPy работает' } },
+  { id: 102, title: 'Pandas: DataFrame', chapter: 'DS · М2', act: 1, xp: 300, completed: false, locked: false, icon: '📊',
+    desc: 'Pandas — инструмент анализа данных. DataFrame — таблица данных.',
+    task: { desc: 'Создай DataFrame с колонками "agent" и "level", добавь 2 строки данных', keywords: ['import pandas', 'pd.DataFrame', '"agent"', '"level"', 'print'], example: 'import pandas as pd\ndf = pd.DataFrame({"agent": ["Nova", "Phantom"], "level": [42, 38]})\nprint(df)', output: '> agent  level\n> Nova   42\n> Phantom 38\n[OK] DataFrame создан' } },
+  { id: 103, title: 'Pandas: фильтрация', chapter: 'DS · М3', act: 2, xp: 350, completed: false, locked: false, icon: '🔍',
+    desc: 'Фильтрация данных — поиск агентов NEXUS по критериям.',
+    task: { desc: 'Отфильтруй DataFrame: выведи только строки где level > 40', keywords: ['df[', '>', '40', 'print'], example: 'high_level = df[df["level"] > 40]\nprint(high_level)', output: '> agent  level\n> Nova   42\n[OK] Фильтрация работает' } },
+  { id: 104, title: 'Matplotlib: графики', chapter: 'DS · М4', act: 2, xp: 400, completed: false, locked: true, icon: '📈',
+    desc: 'Визуализация данных — рисуем графики угроз NEXUS.',
+    task: { desc: 'Нарисуй линейный график через plt.plot([1,2,3], [1,4,9])', keywords: ['import matplotlib', 'plt.plot', '[1,2,3]', '[1,4,9]', 'plt.show'], example: 'import matplotlib.pyplot as plt\nplt.plot([1,2,3], [1,4,9])\nplt.show()', output: '> [График создан]\n[OK] Matplotlib работает' } },
+  { id: 105, title: 'Sklearn: LinearRegression', chapter: 'DS · М5', act: 3, xp: 500, completed: false, locked: true, icon: '🤖',
+    desc: 'Первая ML модель: линейная регрессия для предсказания угроз.',
+    task: { desc: 'Создай LinearRegression из sklearn, обучи на X=[[1],[2],[3]], y=[1,4,9]', keywords: ['LinearRegression', 'fit(', '[[1]', '[2]', '[3]'], example: 'from sklearn.linear_model import LinearRegression\nmodel = LinearRegression()\nmodel.fit([[1],[2],[3]], [1,4,9])\nprint("Модель обучена")', output: '> Модель обучена\n[OK] sklearn работает' } },
+];
+
+const NEURAL_ARCH_LESSONS: Lesson[] = [
+  { id: 201, title: 'Линейная алгебра', chapter: 'AI · М1', act: 1, xp: 300, completed: false, locked: false, icon: '🧮',
+    desc: 'Матрицы — основа нейронных сетей. Умножение матриц = слой нейросети.',
+    task: { desc: 'Создай матрицу 3x3 через np.zeros() и заполни главную диагональ через np.fill_diagonal()', keywords: ['np.zeros', '3', '3', 'fill_diagonal', 'print'], example: 'import numpy as np\nm = np.zeros((3,3))\nnp.fill_diagonal(m, 1)\nprint(m)', output: '> [[1. 0. 0.]\n>  [0. 1. 0.]\n>  [0. 0. 1.]]\n[OK] Матрица создана' } },
+  { id: 202, title: 'Функции активации', chapter: 'AI · М2', act: 1, xp: 350, completed: false, locked: false, icon: '⚡',
+    desc: 'Sigmoid и ReLU — ворота нейронов. Без них нет глубокого обучения.',
+    task: { desc: 'Реализуй функцию sigmoid(x) = 1 / (1 + e^(-x)) через math.exp', keywords: ['def', 'sigmoid', 'return', '1', 'math.exp', 'import math'], example: 'import math\ndef sigmoid(x):\n    return 1 / (1 + math.exp(-x))\nprint(sigmoid(0))', output: '> 0.5\n[OK] Sigmoid работает' } },
+  { id: 203, title: 'Нейрон с нуля', chapter: 'AI · М3', act: 2, xp: 500, completed: false, locked: false, icon: '🧠',
+    desc: 'Создаём базовый нейрон: веса, смещение, функция активации.',
+    task: { desc: 'Создай класс Neuron с методом forward(inputs) → dot product + bias', keywords: ['class', 'Neuron', 'def', 'forward', 'np.dot', 'bias'], example: 'import numpy as np\nclass Neuron:\n    def __init__(self, n_inputs):\n        self.weights = np.random.randn(n_inputs)\n        self.bias = 0\n    def forward(self, inputs):\n        return np.dot(self.weights, inputs) + self.bias', output: '> Neuron создан\n[OK] Класс работает' } },
+  { id: 204, title: 'Backpropagation', chapter: 'AI · М4', act: 2, xp: 600, completed: false, locked: true, icon: '🔄',
+    desc: 'Обратное распространение ошибки — как нейросеть обучается.',
+    task: { desc: 'Реализуй функцию mse_loss(y_pred, y_true) → среднеквадратичная ошибка', keywords: ['def', 'mse_loss', 'return', 'np.mean', '**', '2'], example: 'import numpy as np\ndef mse_loss(y_pred, y_true):\n    return np.mean((y_pred - y_true) ** 2)\nprint(mse_loss([1,2,3],[1,3,5]))', output: '> 1.67\n[OK] Loss function работает' } },
+  { id: 205, title: 'PyTorch: тензоры', chapter: 'AI · М5', act: 3, xp: 700, completed: false, locked: true, icon: '🔥',
+    desc: 'PyTorch — фреймворк для deep learning. Тензор = GPU-ускоренный массив.',
+    task: { desc: 'Создай тензор torch.tensor([1,2,3]) и вычисли его сумму через .sum()', keywords: ['import torch', 'torch.tensor', '[1,2,3]', '.sum()', 'print'], example: 'import torch\nt = torch.tensor([1.0, 2.0, 3.0])\nprint(t.sum())', output: '> tensor(6.)\n[OK] PyTorch работает' } },
+];
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 type Tab = 'theory' | 'missions';
@@ -463,8 +501,9 @@ type OutputLine = { text: string; type: 'cmd' | 'ok' | 'err' | 'info' | 'dim' };
 type RunState = 'idle' | 'running' | 'success' | 'error';
 
 export default function LessonsSection() {
-  const { applyXpResult } = useGame();
+  const { applyXpResult, character } = useGame();
   const { runCode: pyRun, loading: pyLoading } = usePyodide();
+  const playerClass = character?.class || 'cipher';
 
   const [tab, setTab] = useState<Tab>('theory');
   const [selectedTheory, setSelectedTheory] = useState<Theory>(THEORY_LIBRARY[0]);
@@ -479,8 +518,18 @@ export default function LessonsSection() {
   const [showHint, setShowHint] = useState(false);
   const [realExec, setRealExec] = useState(false); // true = Pyodide
 
+  // Классовые уроки — добавляем к общим
+  const classLessons = useMemo(() => {
+    const cls = playerClass;
+    if (cls === 'data_ghost' || cls === 'netrunner') return DATA_GHOST_LESSONS;
+    if (cls === 'neural_architect' || cls === 'street_samurai') return NEURAL_ARCH_LESSONS;
+    return []; // CIPHER не имеет специальных — только базовые Python
+  }, [playerClass]);
+
+  const allLessons = useMemo(() => [...LESSONS, ...classLessons], [classLessons]);
+
   const outputRef = useRef<HTMLDivElement>(null);
-  const lesson = LESSONS.find(l => l.id === activeId)!;
+  const lesson = allLessons.find(l => l.id === activeId) ?? LESSONS[0];
 
   const selectLesson = (l: Lesson) => {
     if (l.locked) return;
@@ -576,7 +625,7 @@ export default function LessonsSection() {
     }
   };
 
-  const completedCount = LESSONS.filter(l => l.completed || completedInSession.includes(l.id)).length;
+  const completedCount = allLessons.filter(l => l.completed || completedInSession.includes(l.id)).length;
   const categories = ['Все', ...Array.from(new Set(THEORY_LIBRARY.map(t => t.category)))];
   const filteredTheory = theoryFilter === 'Все' ? THEORY_LIBRARY : THEORY_LIBRARY.filter(t => t.category === theoryFilter);
 
@@ -591,7 +640,14 @@ export default function LessonsSection() {
             <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-1">// THE ARCHIVE · RESIST</div>
             <h2 className="font-orbitron text-2xl text-white">УРОКИ <span className="text-cyber-green">PYTHON</span></h2>
           </div>
-          <div className="font-mono text-xs text-cyber-green">{completedCount}/{LESSONS.length} миссий</div>
+          <div className="text-right">
+            <div className="font-mono text-xs text-cyber-green">{completedCount}/{allLessons.length} миссий</div>
+            {classLessons.length > 0 && (
+              <div className="font-mono text-[10px] text-gray-600 mt-0.5">
+                +{classLessons.length} {playerClass === 'data_ghost' || playerClass === 'netrunner' ? 'DATA SCIENCE' : 'AI'} уроков
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -702,7 +758,7 @@ export default function LessonsSection() {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="w-full lg:w-60 flex-shrink-0 space-y-4">
               {([1, 2, 3] as const).map(act => {
-                const actLessons = LESSONS.filter(l => l.act === act);
+                const actLessons = allLessons.filter(l => l.act === act);
                 const meta = ACT_META[act];
                 return (
                   <div key={act}>
@@ -873,13 +929,13 @@ export default function LessonsSection() {
               </div>
 
               <div className="flex justify-between">
-                <button onClick={() => { const p = LESSONS.find(l => l.id === lesson.id - 1); if (p && !p.locked) selectLesson(p); }}
-                  disabled={lesson.id === 1}
+                <button onClick={() => { const p = allLessons.find(l => l.id === lesson.id - 1); if (p && !p.locked) selectLesson(p); }}
+                  disabled={allLessons.findIndex(l => l.id === lesson.id) === 0}
                   className="font-orbitron text-xs px-4 py-2 border border-white/10 text-gray-600 hover:text-gray-400 disabled:opacity-30 transition-colors">
                   ← НАЗАД
                 </button>
-                <button onClick={() => { const n = LESSONS.find(l => l.id === lesson.id + 1); if (n && !n.locked) selectLesson(n); }}
-                  disabled={!LESSONS.find(l => l.id === lesson.id + 1) || LESSONS.find(l => l.id === lesson.id + 1)?.locked}
+                <button onClick={() => { const n = allLessons.find(l => l.id === lesson.id + 1); if (n && !n.locked) selectLesson(n); }}
+                  disabled={!allLessons.find(l => l.id === lesson.id + 1) || allLessons.find(l => l.id === lesson.id + 1)?.locked}
                   className="font-orbitron text-xs px-4 py-2 border border-white/10 text-gray-600 hover:text-gray-400 disabled:opacity-30 transition-colors">
                   ВПЕРЁД →
                 </button>

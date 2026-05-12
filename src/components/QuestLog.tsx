@@ -202,10 +202,43 @@ const QUESTS: Quest[] = [
 
 const STATUS_ORDER = ['active', 'locked', 'completed'];
 
+// Проверяем выполнение цели по уровню/данным персонажа
+function checkObjectiveProgress(obj: { text: string; done: boolean }, character: { level: number; xp: number } | null): boolean {
+  if (obj.done) return true;
+  if (!character) return false;
+  const t = obj.text.toLowerCase();
+  // Автоматическая проверка по уровню
+  const levelMatch = t.match(/достигни (\d+)-?го? уровня/);
+  if (levelMatch && character.level >= parseInt(levelMatch[1])) return true;
+  const lvl5 = t.includes('5-го уровня') || t.includes('уровень 5');
+  if (lvl5 && character.level >= 5) return true;
+  return false;
+}
+
 export default function QuestLog({ onNavigate }: { onNavigate?: (s: string) => void }) {
   const { character } = useGame();
   const [filter, setFilter] = useState<'all' | Quest['type']>('all');
   const [selected, setSelected] = useState<Quest | null>(QUESTS[0]);
+  // Локальное состояние галочек — изменяемо пользователем
+  const [checkedObjectives, setCheckedObjectives] = useState<Record<string, boolean[]>>(() => {
+    const init: Record<string, boolean[]> = {};
+    QUESTS.forEach(q => {
+      init[q.id] = q.objectives.map(o => o.done);
+    });
+    return init;
+  });
+
+  const toggleObjective = (questId: string, idx: number) => {
+    setCheckedObjectives(prev => {
+      const arr = [...(prev[questId] ?? [])];
+      arr[idx] = !arr[idx];
+      return { ...prev, [questId]: arr };
+    });
+  };
+
+  const getObjectiveDone = (questId: string, idx: number, obj: Quest['objectives'][0]) => {
+    return checkedObjectives[questId]?.[idx] ?? checkObjectiveProgress(obj, character ? { level: character.level, xp: character.xp } : null);
+  };
 
   const filtered = QUESTS
     .filter(q => filter === 'all' || q.type === filter)
@@ -333,21 +366,32 @@ export default function QuestLog({ onNavigate }: { onNavigate?: (s: string) => v
                 <div className="mb-5">
                   <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-2">// ЗАДАЧИ</div>
                   <div className="space-y-2">
-                    {selected.objectives.map((obj, i) => (
-                      <div key={i} className="flex items-center gap-3 p-2.5 border border-white/5">
-                        <div className={`w-4 h-4 border flex items-center justify-center flex-shrink-0 ${obj.done ? 'border-cyber-green bg-cyber-green/20' : 'border-white/20'}`}>
-                          {obj.done && <Icon name="Check" size={10} className="text-cyber-green" />}
-                        </div>
-                        <span className={`font-rajdhani text-sm ${obj.done ? 'text-cyber-green line-through' : 'text-gray-300'}`}>
-                          {obj.text}
-                        </span>
-                      </div>
-                    ))}
+                    {selected.objectives.map((obj, i) => {
+                      const done = getObjectiveDone(selected.id, i, obj);
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => selected.status === 'active' && toggleObjective(selected.id, i)}
+                          className="w-full flex items-center gap-3 p-2.5 border border-white/5 text-left transition-all hover:border-white/10"
+                        >
+                          <div className={`w-4 h-4 border flex items-center justify-center flex-shrink-0 transition-all ${done ? 'border-cyber-green bg-cyber-green/20' : 'border-white/20 hover:border-white/40'}`}>
+                            {done && <Icon name="Check" size={10} className="text-cyber-green" />}
+                          </div>
+                          <span className={`font-rajdhani text-sm ${done ? 'text-cyber-green line-through' : 'text-gray-300'}`}>
+                            {obj.text}
+                          </span>
+                          {selected.status === 'active' && !done && (
+                            <span className="ml-auto font-mono text-[9px] text-gray-700">нажми чтобы отметить</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {/* Progress based on checked state */}
                   <div className="mt-2 h-1 bg-black/60">
                     <div className="h-full transition-all duration-500"
                       style={{
-                        width: `${(selected.objectives.filter(o => o.done).length / selected.objectives.length) * 100}%`,
+                        width: `${(selected.objectives.filter((o, i) => getObjectiveDone(selected.id, i, o)).length / selected.objectives.length) * 100}%`,
                         backgroundColor: TYPE_COLORS[selected.type],
                         boxShadow: `0 0 6px ${TYPE_COLORS[selected.type]}`,
                       }} />

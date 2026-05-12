@@ -49,25 +49,28 @@ const FEATURES = [
 
 const CLASSES = [
   {
-    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/7f113432-59e4-40e8-abfa-c189c7478bd7.jpg',
-    name: 'Hacker',
-    desc: 'Скрипты · Автоматизация · Глитч',
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
+    name: 'CIPHER',
+    desc: 'Python · Скрипты · Автоматизация',
     color: '#00ff41',
     perks: ['Lambda Strike', 'Data Breach'],
+    focus: 'Полный Python от А до Я',
   },
   {
-    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/2fd8ffba-85dd-4b30-aba1-ceb9dd168a5e.jpg',
-    name: 'Python-Junior',
-    desc: 'Универсал · Баланс · Адаптация',
-    color: '#ff00ff',
-    perks: ['For Loop Barrage', 'If-Else Defense'],
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
+    name: 'DATA GHOST',
+    desc: 'Data Science · ML · Аналитика',
+    color: '#00aaff',
+    perks: ['Pattern Recognition', 'Predictive Shield'],
+    focus: 'Python + Data Science + ML',
   },
   {
-    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ba390b4d-c17b-4e41-933f-463af7aa414a.jpg',
-    name: 'Py-Backend',
-    desc: 'Архитектура · API · AoE',
-    color: '#6644ff',
-    perks: ['API Summon', 'Database Strike'],
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
+    name: 'NEURAL ARCHITECT',
+    desc: 'Deep Learning · AI · Нейросети',
+    color: '#aa00ff',
+    perks: ['Neural Overload', 'Model Summon'],
+    focus: 'Создание собственного ИИ',
   },
 ];
 
@@ -222,6 +225,7 @@ export default function Landing({ onLogin, onRegister, onTutorial }: Props) {
             <div className="absolute bottom-3 left-3 right-3">
               <div className="font-orbitron text-sm font-black drop-shadow-lg" style={{ color: cls.color, textShadow: `0 0 12px ${cls.color}` }}>{cls.name}</div>
               <div className="font-mono text-[10px] text-gray-300">{cls.desc}</div>
+              <div className="font-mono text-[9px] mt-0.5" style={{ color: cls.color + '80' }}>{(cls as { focus?: string }).focus}</div>
             </div>
           </div>
           {/* Перки */}

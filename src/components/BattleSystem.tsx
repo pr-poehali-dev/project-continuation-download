@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Editor from '@monaco-editor/react';
 import Icon from '@/components/ui/icon';
 import { useGame, XpResult } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
+import { generateTaskChain, BattleTask } from '@/lib/battleTasks';
 
 // GDD Enemies
 const ENEMIES = [
@@ -53,29 +54,53 @@ const ENEMIES = [
   },
 ];
 
-// GDD: способности по классам
+// Способности по новым классам
 const CLASS_ABILITIES: Record<string, { id: string; name: string; desc: string; icon: string; effect: string; cooldown: number; color: string }[]> = {
-  hacker: [
+  // CIPHER — Python мастер
+  cipher: [
     { id: 'lambda', name: 'Lambda Strike', desc: '+20% урон следующей атакой', icon: 'Zap', effect: 'damage_boost_20', cooldown: 2, color: '#00ff41' },
     { id: 'loop', name: 'Infinite Loop Trap', desc: 'Контратака: враг получает 40 урона', icon: 'RefreshCw', effect: 'counter', cooldown: 3, color: '#00ff41' },
-    { id: 'breach', name: 'Data Breach', desc: 'Показывает одно ключевое слово', icon: 'Eye', effect: 'reveal', cooldown: 1, color: '#00ff41' },
+    { id: 'breach', name: 'Data Breach', desc: 'Раскрывает одно ключевое слово', icon: 'Eye', effect: 'reveal', cooldown: 1, color: '#00ff41' },
   ],
-  netrunner: [
-    { id: 'forloop', name: 'For Loop Barrage', desc: '+15% урон следующей атакой', icon: 'Repeat', effect: 'damage_boost_15', cooldown: 2, color: '#ff00ff' },
-    { id: 'ifelse', name: 'If-Else Defense', desc: '-35% входящего урона на 2 хода', icon: 'Shield', effect: 'defense', cooldown: 3, color: '#ff00ff' },
-    { id: 'funcall', name: 'Function Call', desc: 'Показывает пример кода', icon: 'Code', effect: 'hint', cooldown: 1, color: '#ff00ff' },
+  // DATA GHOST — Data Science
+  data_ghost: [
+    { id: 'pattern', name: 'Pattern Recognition', desc: '+20% урон + показывает тему задачи', icon: 'BarChart2', effect: 'damage_boost_20', cooldown: 2, color: '#00aaff' },
+    { id: 'predict', name: 'Predictive Shield', desc: '-35% входящего урона на 2 хода', icon: 'Shield', effect: 'defense', cooldown: 3, color: '#00aaff' },
+    { id: 'analyze', name: 'Data Analyze', desc: 'Показывает полный пример решения', icon: 'Code', effect: 'hint', cooldown: 1, color: '#00aaff' },
+  ],
+  // NEURAL ARCHITECT — AI
+  neural_architect: [
+    { id: 'neural', name: 'Neural Overload', desc: '+30% урон — мощнейшая атака', icon: 'Brain', effect: 'damage_boost_30', cooldown: 2, color: '#aa00ff' },
+    { id: 'backprop', name: 'Backpropagation', desc: 'AoE: +15% урон + дебафф врагу', icon: 'Cpu', effect: 'aoe', cooldown: 3, color: '#aa00ff' },
+    { id: 'model', name: 'Model Summon', desc: 'Критическая атака +60% урона', icon: 'Database', effect: 'crit', cooldown: 2, color: '#aa00ff' },
+  ],
+  // Обратная совместимость со старыми именами
+  hacker:         [
+    { id: 'lambda', name: 'Lambda Strike', desc: '+20% урон', icon: 'Zap', effect: 'damage_boost_20', cooldown: 2, color: '#00ff41' },
+    { id: 'loop', name: 'Infinite Loop Trap', desc: 'Контратака 40 урона', icon: 'RefreshCw', effect: 'counter', cooldown: 3, color: '#00ff41' },
+    { id: 'breach', name: 'Data Breach', desc: 'Раскрывает слово', icon: 'Eye', effect: 'reveal', cooldown: 1, color: '#00ff41' },
+  ],
+  netrunner:      [
+    { id: 'forloop', name: 'For Loop Barrage', desc: '+15% урон', icon: 'Repeat', effect: 'damage_boost_15', cooldown: 2, color: '#00aaff' },
+    { id: 'ifelse', name: 'If-Else Defense', desc: '-35% урон', icon: 'Shield', effect: 'defense', cooldown: 3, color: '#00aaff' },
+    { id: 'funcall', name: 'Function Call', desc: 'Показывает пример', icon: 'Code', effect: 'hint', cooldown: 1, color: '#00aaff' },
   ],
   street_samurai: [
-    { id: 'api', name: 'API Summon', desc: '+25% урон следующей атакой', icon: 'Globe', effect: 'damage_boost_25', cooldown: 2, color: '#6644ff' },
-    { id: 'async', name: 'Async Overload', desc: 'AoE: +15% урон + дебафф врагу', icon: 'Cpu', effect: 'aoe', cooldown: 3, color: '#6644ff' },
-    { id: 'db', name: 'Database Strike', desc: 'Критическая атака +60% урона', icon: 'Database', effect: 'crit', cooldown: 2, color: '#6644ff' },
+    { id: 'api', name: 'API Summon', desc: '+25% урон', icon: 'Globe', effect: 'damage_boost_25', cooldown: 2, color: '#aa00ff' },
+    { id: 'async', name: 'Async Overload', desc: 'AoE атака', icon: 'Cpu', effect: 'aoe', cooldown: 3, color: '#aa00ff' },
+    { id: 'db', name: 'Database Strike', desc: 'Крит +60%', icon: 'Database', effect: 'crit', cooldown: 2, color: '#aa00ff' },
   ],
 };
 
 const CLASS_THEME: Record<string, { primary: string; secondary: string; label: string }> = {
-  hacker:         { primary: '#00ff41', secondary: '#003310', label: 'HACKER' },
-  netrunner:      { primary: '#ff00ff', secondary: '#330033', label: 'PYTHON-JUNIOR' },
-  street_samurai: { primary: '#6644ff', secondary: '#1a0044', label: 'PY-BACKEND' },
+  // Новые имена классов
+  cipher:           { primary: '#00ff41', secondary: '#003310', label: 'CIPHER' },
+  data_ghost:       { primary: '#00aaff', secondary: '#001a33', label: 'DATA GHOST' },
+  neural_architect: { primary: '#aa00ff', secondary: '#1a0044', label: 'NEURAL ARCHITECT' },
+  // Обратная совместимость
+  hacker:         { primary: '#00ff41', secondary: '#003310', label: 'CIPHER' },
+  netrunner:      { primary: '#ff00ff', secondary: '#330033', label: 'DATA GHOST' },
+  street_samurai: { primary: '#6644ff', secondary: '#1a0044', label: 'NEURAL ARCHITECT' },
 };
 
 type BattleState = 'idle' | 'fighting' | 'win' | 'lose';
@@ -97,9 +122,9 @@ const ENEMY_BACKEND_IDS: Record<number, string> = {
 
 export default function BattleSystem() {
   const { character, applyXpResult } = useGame();
-  const playerClass = character?.class || 'hacker';
-  const theme = CLASS_THEME[playerClass] || CLASS_THEME.hacker;
-  const abilities = CLASS_ABILITIES[playerClass] || CLASS_ABILITIES.hacker;
+  const playerClass = character?.class || 'cipher';
+  const theme = CLASS_THEME[playerClass] || CLASS_THEME.cipher;
+  const abilities = CLASS_ABILITIES[playerClass] || CLASS_ABILITIES.cipher;
 
   const [selectedEnemy, setSelectedEnemy] = useState(ENEMIES[0]);
   const [code, setCode] = useState('');
@@ -119,6 +144,25 @@ export default function BattleSystem() {
   const [floatDamage, setFloatDamage] = useState<{ value: number; type: 'enemy' | 'player' } | null>(null);
   const [winReward, setWinReward] = useState<XpResult | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // ── Цепочка задач (генерируется при выборе врага) ──
+  const [taskChain, setTaskChain] = useState<BattleTask[]>([]);
+  const [taskIdx, setTaskIdx] = useState(0);
+  const [tasksCompleted, setTasksCompleted] = useState(0);
+
+  // Текущая задача — из цепочки или статичная из врага
+  const currentTask = useMemo(() => {
+    if (taskChain.length > 0 && taskIdx < taskChain.length) {
+      const t = taskChain[taskIdx];
+      return {
+        description: t.description,
+        keywords: t.keywords,
+        hint: t.hint,
+        lore: `[${t.topic.toUpperCase()}] ${t.difficulty.toUpperCase()} · Задача ${taskIdx + 1}/${taskChain.length}`,
+      };
+    }
+    return selectedEnemy.task;
+  }, [taskChain, taskIdx, selectedEnemy]);
 
   const logRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -140,8 +184,9 @@ export default function BattleSystem() {
 
   const checkCode = (userCode: string): boolean => {
     const lower = userCode.toLowerCase().replace(/\s+/g, ' ');
-    const matched = selectedEnemy.task.keywords.filter(kw => lower.includes(kw.toLowerCase()));
-    return matched.length >= Math.ceil(selectedEnemy.task.keywords.length * 0.7);
+    const kws = currentTask.keywords;
+    const matched = kws.filter(kw => lower.includes(kw.toLowerCase()));
+    return matched.length >= Math.ceil(kws.length * 0.7);
   };
 
   const stopTimer = useCallback(() => {
@@ -185,11 +230,20 @@ export default function BattleSystem() {
   }, [battleState, startTimer, stopTimer]);
 
   const startBattle = () => {
+    // Генерируем цепочку задач для этого врага
+    const chain = generateTaskChain(selectedEnemy.level, playerClass, 4);
+    setTaskChain(chain);
+    setTaskIdx(0);
+    setTasksCompleted(0);
+
     setBattleState('fighting');
     setPlayerHp(character?.hp ?? 200);
     setEnemyHp(selectedEnemy.maxHp);
     setWinReward(null);
-    setBattleLog([{ text: `⚡ БОЙ НАЧАТ // ${selectedEnemy.name} [${selectedEnemy.faction}] LVL ${selectedEnemy.level}`, type: 'system' }]);
+    setBattleLog([
+      { text: `⚡ БОЙ НАЧАТ // ${selectedEnemy.name} [${selectedEnemy.faction}] LVL ${selectedEnemy.level}`, type: 'system' },
+      { text: `📋 Цепочка заданий: ${chain.length} задач`, type: 'info' },
+    ]);
     setCode('');
     setRevealedKeyword(null);
     setPendingMultiplier(1);
@@ -238,9 +292,20 @@ export default function BattleSystem() {
       triggerShake('enemy');
       addLog(`✅ КОД ПРИНЯТ → ${damage} урона ${pendingMultiplier > 1 ? `(×${pendingMultiplier.toFixed(1)})` : ''}`, 'success');
       addLog(`🔴 HP ${selectedEnemy.name}: ${newEnemyHp}/${selectedEnemy.maxHp}`, 'info');
+
+      // Переключаем задачу в цепочке
+      const nextTaskIdx = taskIdx + 1;
+      setTasksCompleted(n => n + 1);
+      if (taskChain.length > 0 && nextTaskIdx < taskChain.length) {
+        setTaskIdx(nextTaskIdx);
+        setRevealedKeyword(null);
+        setCode('');
+        addLog(`📋 СЛЕДУЮЩАЯ ЗАДАЧА: ${taskChain[nextTaskIdx].topic.toUpperCase()}`, 'system');
+      }
+
       if (newEnemyHp <= 0) {
         setBattleState('win');
-        addLog(`🏆 ПОБЕДА // ${selectedEnemy.name} повержен!`, 'win');
+        addLog(`🏆 ПОБЕДА // ${selectedEnemy.name} повержен! (${tasksCompleted + 1} задач выполнено)`, 'win');
         saveBattleWin(0);
         return;
       }
@@ -398,22 +463,36 @@ export default function BattleSystem() {
 
             {/* Mission briefing */}
             <div className="border border-white/8 p-4">
-              <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-2">// ЗАДАНИЕ</div>
-              <p className="text-white font-rajdhani text-sm leading-snug mb-3">{selectedEnemy.task.description}</p>
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-mono text-[10px] text-gray-600 tracking-widest">// ЗАДАНИЕ</div>
+                {taskChain.length > 0 && battleState === 'fighting' && (
+                  <div className="flex items-center gap-1">
+                    {taskChain.map((_, i) => (
+                      <div key={i} className="w-2 h-2 rounded-full transition-all"
+                        style={{ backgroundColor: i < tasksCompleted ? theme.primary : i === taskIdx ? theme.primary + '80' : '#333' }} />
+                    ))}
+                    <span className="font-mono text-[9px] text-gray-600 ml-1">{tasksCompleted}/{taskChain.length}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="font-mono text-[10px] text-gray-700 mb-1">{currentTask.lore}</div>
+              <p className="text-white font-rajdhani text-sm leading-snug mb-3">{currentTask.description}</p>
+
               {revealedKeyword && (
                 <div className="font-mono text-xs text-cyber-cyan border border-cyber-cyan/30 bg-cyber-cyan/5 px-2 py-1 mb-2">
                   💡 Ключевое слово: <span className="font-bold">{revealedKeyword}</span>
                 </div>
               )}
               <div className="flex flex-wrap gap-1">
-                {selectedEnemy.task.keywords.map(kw => (
-                  <span key={kw} className="font-mono text-[10px] px-1.5 py-0.5 border"
+                {currentTask.keywords.map(kw => (
+                  <span key={kw} className="font-mono text-[10px] px-1.5 py-0.5 border transition-all"
                     style={{
                       borderColor: code.toLowerCase().includes(kw.toLowerCase()) ? theme.primary + '60' : '#333',
                       color: code.toLowerCase().includes(kw.toLowerCase()) ? theme.primary : '#555',
                       backgroundColor: code.toLowerCase().includes(kw.toLowerCase()) ? theme.primary + '10' : 'transparent',
                     }}>
-                    {kw}
+                    {code.toLowerCase().includes(kw.toLowerCase()) ? '✓ ' : ''}{kw}
                   </span>
                 ))}
               </div>

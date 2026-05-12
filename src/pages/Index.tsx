@@ -130,8 +130,15 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
   const { character } = useGame();
   if (!character) return null;
 
-  const classColor: Record<string, string> = { hacker: '#00ffff', netrunner: '#ff00ff', street_samurai: '#ffff00' };
-  const charColor = classColor[character.class] || '#00ffff';
+  const classColor: Record<string, string> = {
+    cipher: '#00ff41', data_ghost: '#00aaff', neural_architect: '#aa00ff',
+    hacker: '#00ff41', netrunner: '#00aaff', street_samurai: '#aa00ff',
+  };
+  const classLabel: Record<string, string> = {
+    cipher: 'CIPHER', data_ghost: 'DATA GHOST', neural_architect: 'NEURAL ARCHITECT',
+    hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
+  };
+  const charColor = classColor[character.class] || '#00ff41';
 
   const xpPct = Math.round((character.xp / character.xp_to_next) * 100);
 
@@ -151,7 +158,7 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
           </h1>
           <div className="flex items-center gap-3 flex-wrap mt-1">
             <span className="font-mono text-xs" style={{ color: charColor }}>
-              {character.class === 'hacker' ? 'HACKER' : character.class === 'netrunner' ? 'PYTHON-JUNIOR' : 'PYTHON-BACKEND'}
+              {classLabel[character.class] ?? character.class.toUpperCase()}
             </span>
             <span className="text-gray-700 font-mono text-xs">·</span>
             <span className="text-gray-500 font-mono text-xs">LVL {character.level}</span>
