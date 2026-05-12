@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
 import { pushNotif } from './Notifications';
+import { progress } from '@/lib/progressStore';
 
 // ─── Данные ──────────────────────────────────────────────────────────────────
 
@@ -200,6 +201,7 @@ export default function Crafting() {
           setCraftedItems(prev => [...prev, r.id]);
           setCrafting(null);
           setCraftProgress(0);
+          progress.recordCraft();
           pushNotif({
             type: 'item',
             title: `Скрафчено: ${r.name}`,

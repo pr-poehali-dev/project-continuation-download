@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
 import { pushNotif } from './Notifications';
+import { progress } from '@/lib/progressStore';
 
 // ─── NPC данные ──────────────────────────────────────────────────────────────
 
@@ -283,6 +284,11 @@ function DialogEngine({ npc, onClose }: DialogEngineProps) {
   const [lineIdx, setLineIdx] = useState(0);
   const [finished, setFinished] = useState(false);
   const [rewards, setRewards] = useState<{ xp: number; creds: number; items: string[] }>({ xp: 0, creds: 0, items: [] });
+
+  // Записываем NPC в прогресс при первом открытии диалога
+  useEffect(() => {
+    progress.recordNpcSpoken(npc.id);
+  }, [npc.id]);
 
   const node = npc.dialog.find(n => n.id === nodeId)!;
   const currentLine = node.lines[lineIdx];

@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { api } from '@/lib/api';
 import { useGame } from '@/lib/GameContext';
 import { pushNotif } from '@/components/Notifications';
+import { progress } from '@/lib/progressStore';
 
 // Web Audio — глитч-звук при открытии лутбокса
 function playLootSound(rarity: string) {
@@ -88,6 +89,7 @@ export default function ShopSection() {
     setBuyLoading(null);
     if (data.error) { showMsg(data.error, 'error'); return; }
     await Promise.all([refreshCharacter(), refreshInventory()]);
+    progress.recordShopBuy();
     showMsg(`✅ Куплено: ${item.name}`, 'success');
   };
 
@@ -127,6 +129,7 @@ export default function ShopSection() {
 
     await Promise.all([refreshCharacter(), refreshInventory()]);
 
+    progress.recordLootbox();
     // Toast уведомление
     pushNotif({
       type: 'item',

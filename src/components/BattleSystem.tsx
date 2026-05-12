@@ -5,6 +5,7 @@ import { useGame, XpResult } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
 import { generateTaskChain, BattleTask } from '@/lib/battleTasks';
+import { progress } from '@/lib/progressStore';
 
 // GDD Enemies
 const ENEMIES = [
@@ -258,9 +259,12 @@ export default function BattleSystem() {
     const backendId = ENEMY_BACKEND_IDS[selectedEnemy.id] || 'corp_drone';
     const result = await api.battle.attack(backendId, true, currentEnemyHp);
     setSaving(false);
+    // Записываем локально для квестов/достижений
+    progress.recordBattleWin();
     if (result && !result.error) {
       applyXpResult(result as XpResult);
       setWinReward(result as XpResult);
+      progress.recordXp(result.xp_gained ?? 0);
       if (result.leveled_up) {
         pushNotif({ type: 'level', title: `LEVEL UP! → ${result.new_level}`, body: 'Статы персонажа увеличены!', icon: '⚡', color: '#00ff41' });
       }
@@ -321,7 +325,7 @@ export default function BattleSystem() {
       triggerShake('player');
       addLog(`❌ ОШИБКА В КОДЕ → Враг атакует: -${damage} HP${dmgReduction < 1 ? ' [ЗАЩИТА]' : ''}`, 'error');
       addLog(`💙 Ваш HP: ${newPlayerHp}/200`, 'info');
-      if (newPlayerHp <= 0) { setBattleState('lose'); addLog('💀 ПОРАЖЕНИЕ // GAME OVER', 'lose'); return; }
+      if (newPlayerHp <= 0) { setBattleState('lose'); addLog('💀 ПОРАЖЕНИЕ // GAME OVER', 'lose'); progress.recordBattleLoss(); return; }
     }
     setCode('');
     startTimer();

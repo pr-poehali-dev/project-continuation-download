@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useProgress } from '@/lib/useProgress';
+import { progress as progressStore } from '@/lib/progressStore';
 import Sidebar from '@/components/Sidebar';
 import CharacterProfile from '@/components/CharacterProfile';
 import LessonsSection from '@/components/LessonsSection';
@@ -17,6 +19,7 @@ import Crafting from '@/components/Crafting';
 import Achievements from '@/components/Achievements';
 import NpcDialog from '@/components/NpcDialog';
 import Onboarding, { useOnboarding } from '@/components/Onboarding';
+import BetaBanner from '@/components/BetaBanner';
 import { useGame } from '@/lib/GameContext';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
@@ -29,6 +32,11 @@ export default function Index() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appView, setAppView] = useState<AppView>('landing');
   const { show: showOnboarding, setShow: setShowOnboarding } = useOnboarding();
+
+  // Записываем сессию при входе
+  useEffect(() => {
+    if (token && character) progressStore.recordSession();
+  }, [token, character?.id]);
 
   const navigate = (section: string) => {
     setVisible(false);
@@ -91,7 +99,7 @@ export default function Index() {
 
       {/* Main content — dynamic offset */}
       <main
-        className="flex-1 min-h-screen transition-all duration-300 pt-14 lg:pt-0 overflow-x-hidden"
+        className="flex-1 min-h-screen transition-all duration-300 pt-14 lg:pt-7 overflow-x-hidden"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? 'translateY(0)' : 'translateY(10px)',
@@ -116,6 +124,7 @@ export default function Index() {
         {activeSection === 'npc' && <NpcDialog />}
       </main>
       <ToastContainer />
+      <BetaBanner version="0.1.0-beta" />
       {showOnboarding && (
         <Onboarding
           onNavigate={section => { navigate(section); }}
@@ -128,6 +137,7 @@ export default function Index() {
 
 function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
   const { character } = useGame();
+  const prog = useProgress();
   if (!character) return null;
 
   const classColor: Record<string, string> = {
@@ -139,8 +149,15 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
     hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
   };
   const charColor = classColor[character.class] || '#00ff41';
-
   const xpPct = Math.round((character.xp / character.xp_to_next) * 100);
+
+  // Дневные задачи
+  const dailyTasks = [
+    { label: 'Пройди 1 урок', done: prog.dailyLessons >= 1, current: prog.dailyLessons, goal: 1, color: '#00ff41' },
+    { label: 'Выиграй 1 бой', done: prog.dailyBattles >= 1, current: prog.dailyBattles, goal: 1, color: '#ff00ff' },
+    { label: 'Пройди 1 данж', done: prog.dailyDungeons >= 1, current: prog.dailyDungeons, goal: 1, color: '#ffaa00' },
+  ];
+  const dailyDone = dailyTasks.filter(t => t.done).length;
 
   return (
     <div className="min-h-screen relative">
@@ -183,6 +200,53 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
                   <div className="h-full transition-all" style={{ width: `${stat.bar}%`, backgroundColor: stat.color, boxShadow: `0 0 4px ${stat.color}` }} />
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+
+        {/* Daily progress */}
+        <div className="mb-8">
+          <div className="font-mono text-xs text-gray-600 mb-3 tracking-widest">
+            // ЕЖЕДНЕВНЫЕ ЗАДАЧИ · {dailyDone}/{dailyTasks.length} ВЫПОЛНЕНО
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {dailyTasks.map(task => (
+              <div key={task.label}
+                className="border p-3 transition-all"
+                style={{
+                  borderColor: task.done ? task.color + '60' : '#ffffff0a',
+                  backgroundColor: task.done ? task.color + '08' : 'transparent',
+                }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-4 h-4 border-2 flex items-center justify-center flex-shrink-0`}
+                    style={{ borderColor: task.done ? task.color : '#333', backgroundColor: task.done ? task.color + '25' : 'transparent' }}>
+                    {task.done && <span style={{ color: task.color, fontSize: '9px' }}>✓</span>}
+                  </div>
+                  <span className="font-mono text-[10px]" style={{ color: task.done ? task.color : '#555' }}>
+                    {task.label}
+                  </span>
+                </div>
+                <div className="h-1 bg-black/60">
+                  <div className="h-full transition-all"
+                    style={{ width: `${Math.min(100, (task.current / task.goal) * 100)}%`, backgroundColor: task.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Global stats bar */}
+        <div className="mb-8 grid grid-cols-4 gap-2">
+          {[
+            { label: 'Уроков', value: prog.lessonsCompleted.length, icon: '📚', color: '#00ff41' },
+            { label: 'Побед', value: prog.battlesWon, icon: '⚔️', color: '#ff00ff' },
+            { label: 'Данжей', value: prog.dungeonsCompleted.length, icon: '🏰', color: '#ffaa00' },
+            { label: 'Серия', value: prog.battlesStreak, icon: '🔥', color: '#ff4060' },
+          ].map(s => (
+            <div key={s.label} className="border border-white/5 p-3 text-center">
+              <div className="text-lg mb-0.5">{s.icon}</div>
+              <div className="font-orbitron text-base font-black" style={{ color: s.color }}>{s.value}</div>
+              <div className="font-mono text-[9px] text-gray-600">{s.label}</div>
             </div>
           ))}
         </div>

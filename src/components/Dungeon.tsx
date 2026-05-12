@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { useGame, XpResult } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
+import { progress } from '@/lib/progressStore';
 
 // ─── Данные подземелий ───────────────────────────────────────────────────────
 
@@ -294,12 +295,15 @@ export default function Dungeon() {
     if (!totalCount) return;
     setSavingResult(true);
     const scorePct = Math.round((correctCount / totalCount) * 100);
+    // Записываем в localStorage для квестов/достижений
+    progress.recordDungeonComplete(dungeonId, scorePct);
     const xp = DUNGEON_XP[dungeonId] ?? 200;
     const coins = DUNGEON_COINS[dungeonId] ?? 100;
     const res = await api.dungeon.complete(dungeonId, scorePct, xp, coins);
     setSavingResult(false);
     if (res && !res.error && res.xp_gained > 0) {
       applyXpResult(res as XpResult);
+      progress.recordXp(res.xp_gained ?? 0);
       setDungeonReward({ xp: res.xp_gained, levelUp: res.leveled_up ?? false, newLevel: res.new_level ?? 1 });
       if (res.leveled_up) {
         pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: 'Статы персонажа улучшены', icon: '⚡', color: '#00ff41' });

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
+import { useProgress } from '@/lib/useProgress';
 
 // ─── Данные ──────────────────────────────────────────────────────────────────
 
@@ -61,22 +62,55 @@ const ACHIEVEMENTS: Achievement[] = [
   { id: 'craftsman',    title: 'Мастер крафта',        desc: 'Создай 3 предмета в мастерской',             icon: '🔨', color: '#aa00ff', category: 'social', rarity: 'uncommon',  progress: 0, goal: 3,  unlocked: false, reward: '+400 XP · Materials', hint: 'Создавай импланты в Мастерской' },
 ];
 
+// ─── Вычисляем реальный прогресс из progressStore ────────────────────────────
+
+function getRealProgress(a: Achievement, prog: ReturnType<typeof useProgress>, charLevel: number): { progress: number; unlocked: boolean } {
+  switch (a.id) {
+    case 'first_var':       return { progress: prog.lessonsCompleted.includes(1) ? 1 : 0, unlocked: prog.lessonsCompleted.includes(1) };
+    case 'first_func':      return { progress: prog.lessonsCompleted.includes(6) ? 1 : 0, unlocked: prog.lessonsCompleted.includes(6) };
+    case 'loop_master':     { const n = [4,5,3].filter(id => prog.lessonsCompleted.includes(id)).length; return { progress: n, unlocked: n >= 3 }; }
+    case 'oop_class':       return { progress: prog.lessonsCompleted.includes(11) ? 1 : 0, unlocked: prog.lessonsCompleted.includes(11) };
+    case 'all_lessons':     return { progress: prog.lessonsCompleted.length, unlocked: prog.lessonsCompleted.length >= 12 };
+    case 'first_kill':      return { progress: Math.min(1, prog.battlesWon), unlocked: prog.battlesWon >= 1 };
+    case 'nexus_hunter':    return { progress: Math.min(10, prog.battlesWon), unlocked: prog.battlesWon >= 10 };
+    case 'streak_king':     return { progress: Math.min(5, prog.battlesStreakBest), unlocked: prog.battlesStreakBest >= 5 };
+    case 'boss_slayer':     return { progress: prog.battlesWon >= 20 ? 1 : 0, unlocked: prog.battlesWon >= 20 };
+    case 'joined':          return { progress: 1, unlocked: true };
+    case 'act1_done':       return { progress: prog.battlesWon >= 1 && prog.lessonsCompleted.length >= 1 ? 1 : 0, unlocked: prog.battlesWon >= 1 && prog.lessonsCompleted.length >= 1 };
+    case 'faction_rep':     { const rep = prog.lessonsCompleted.length * 5 + prog.battlesWon * 3 + prog.dungeonsCompleted.length * 10; return { progress: Math.min(100, rep), unlocked: rep >= 100 }; }
+    case 'first_dungeon':   return { progress: prog.dungeonsCompleted.length >= 1 ? 1 : 0, unlocked: prog.dungeonsCompleted.length >= 1 };
+    case 'map_explorer':    { const districts = Math.min(5, 1 + Math.floor(charLevel / 3)); return { progress: districts, unlocked: districts >= 5 }; }
+    case 'perfect_dungeon': { const perfect = Object.values(prog.dungeonsScores).some(s => s === 100); return { progress: perfect ? 1 : 0, unlocked: perfect }; }
+    case 'craftsman':       return { progress: Math.min(3, prog.itemsCrafted), unlocked: prog.itemsCrafted >= 3 };
+    case 'top_10':          return { progress: charLevel >= 10 ? 1 : 0, unlocked: charLevel >= 10 };
+    default:                return { progress: a.progress, unlocked: a.unlocked };
+  }
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Achievements() {
   const { character } = useGame();
+  const prog = useProgress();
   const [filter, setFilter] = useState<Achievement['category'] | 'all'>('all');
   const [showUnlocked, setShowUnlocked] = useState<'all' | 'locked' | 'unlocked'>('all');
 
-  const filtered = ACHIEVEMENTS.filter(a => {
+  // Вычисляем реальный прогресс для каждой ачивки
+  const achievementsWithProgress = useMemo(() => {
+    return ACHIEVEMENTS.map(a => {
+      const real = getRealProgress(a, prog, character?.level ?? 1);
+      return { ...a, progress: real.progress, unlocked: real.unlocked };
+    });
+  }, [prog, character?.level]);
+
+  const filtered = achievementsWithProgress.filter(a => {
     if (filter !== 'all' && a.category !== filter) return false;
     if (showUnlocked === 'unlocked' && !a.unlocked) return false;
     if (showUnlocked === 'locked' && a.unlocked) return false;
     return true;
   });
 
-  const unlockedCount = ACHIEVEMENTS.filter(a => a.unlocked).length;
-  const totalXP = ACHIEVEMENTS.filter(a => a.unlocked).reduce((acc, a) => {
+  const totalXP = achievementsWithProgress.filter(a => a.unlocked).reduce((acc, a) => {
     const match = a.reward.match(/\+(\d+) XP/);
     return acc + (match ? parseInt(match[1]) : 0);
   }, 0);
