@@ -5,7 +5,7 @@ const BOOT_LINES = [
   '> ИНИЦИАЛИЗАЦИЯ CODEGRID-9...',
   '> ШИФРОВАНИЕ КАНАЛА... [OK]',
   '> ОБХОД NEXUS-FIREWALL... [OK]',
-  '> ДОБРО ПОЖАЛОВАТЬ В ПОДПОЛЬЕ',
+  '> THE ARCHIVE ОНЛАЙН. ДОБРО ПОЖАЛОВАТЬ, АГЕНТ.',
 ];
 
 const FEATURES = [
@@ -49,7 +49,7 @@ const FEATURES = [
 
 const CLASSES = [
   {
-    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/c57f7ff6-a3a7-4783-8f10-0d9d80a09f23.jpg',
+    img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/7f113432-59e4-40e8-abfa-c189c7478bd7.jpg',
     name: 'Hacker',
     desc: 'Скрипты · Автоматизация · Глитч',
     color: '#00ff41',
@@ -217,10 +217,11 @@ export default function Landing({ onLogin, onRegister, onTutorial }: Props) {
             }}
           >
             <img src={cls.img} alt={cls.name} className="w-full h-full object-cover object-top transition-all duration-700" />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${cls.color}30, transparent 60%)` }} />
+            {/* Тёмный градиент снизу — текст не сливается */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(5,10,14,0.92) 0%, rgba(5,10,14,0.4) 45%, transparent 70%)' }} />
             <div className="absolute bottom-3 left-3 right-3">
-              <div className="font-orbitron text-sm font-black" style={{ color: cls.color }}>{cls.name}</div>
-              <div className="font-mono text-[10px] text-white/60">{cls.desc}</div>
+              <div className="font-orbitron text-sm font-black drop-shadow-lg" style={{ color: cls.color, textShadow: `0 0 12px ${cls.color}` }}>{cls.name}</div>
+              <div className="font-mono text-[10px] text-gray-300">{cls.desc}</div>
             </div>
           </div>
           {/* Перки */}

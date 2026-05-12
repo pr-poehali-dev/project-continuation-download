@@ -11,10 +11,11 @@ import Landing from '@/components/Landing';
 import Tutorial from '@/components/Tutorial';
 import Dungeon from '@/components/Dungeon';
 import QuestLog from '@/components/QuestLog';
+import CityMap from '@/components/CityMap';
 import { useGame } from '@/lib/GameContext';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
-type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'leaderboard' | 'shop';
+type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop';
 
 export default function Index() {
   const { token, character, authLoading } = useGame();
@@ -100,6 +101,7 @@ export default function Index() {
         {activeSection === 'battle' && <BattleSystem />}
         {activeSection === 'dungeon' && <Dungeon />}
         {activeSection === 'quests' && <QuestLog onNavigate={navigate} />}
+        {activeSection === 'map' && <CityMap onNavigate={navigate} />}
         {activeSection === 'leaderboard' && <Leaderboard />}
         {activeSection === 'shop' && <ShopSection />}
       </main>
@@ -166,6 +168,7 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
           <div className="font-mono text-xs text-gray-600 mb-4 tracking-widest">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
+              { icon: '🗺️', title: 'Карта города', desc: 'CodeGrid-9 на карте — открывай районы, находи миссии и боссов.', color: '#00ffff', section: 'map', btn: 'НА КАРТУ' },
               { icon: '📡', title: 'Уроки Python', desc: 'Теория + практика. Читай, смотри примеры, пиши код в браузере.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
               { icon: '📜', title: 'Квесты', desc: 'Сюжетные и обучающие задания от The Archive. Следи за прогрессом.', color: '#00aaff', section: 'quests', btn: 'МИССИИ' },
               { icon: '⚔️', title: 'Code Combat', desc: 'Сражайся с NEXUS кодом. Action Phase 12 секунд.', color: '#ff00ff', section: 'battle', btn: 'В БОЙ' },

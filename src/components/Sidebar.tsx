@@ -10,6 +10,7 @@ interface SidebarProps {
 
 const NAV_ITEMS = [
   { id: 'home',        label: 'Главная',     icon: 'Home',        color: '#00ffff' },
+  { id: 'map',         label: 'Карта',       icon: 'Map',         color: '#00ffff' },
   { id: 'profile',     label: 'Профиль',     icon: 'User',        color: '#00ffff' },
   { id: 'lessons',     label: 'Уроки',       icon: 'BookOpen',    color: '#00ff41' },
   { id: 'quests',      label: 'Квесты',      icon: 'Scroll',      color: '#00aaff' },
