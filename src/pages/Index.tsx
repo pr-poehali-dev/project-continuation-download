@@ -12,10 +12,14 @@ import Tutorial from '@/components/Tutorial';
 import Dungeon from '@/components/Dungeon';
 import QuestLog from '@/components/QuestLog';
 import CityMap from '@/components/CityMap';
+import NotificationCenter, { ToastContainer } from '@/components/Notifications';
+import Crafting from '@/components/Crafting';
+import Achievements from '@/components/Achievements';
+import NpcDialog from '@/components/NpcDialog';
 import { useGame } from '@/lib/GameContext';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
-type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop';
+type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop' | 'notifications' | 'crafting' | 'achievements' | 'npc';
 
 export default function Index() {
   const { token, character, authLoading } = useGame();
@@ -104,7 +108,12 @@ export default function Index() {
         {activeSection === 'map' && <CityMap onNavigate={navigate} />}
         {activeSection === 'leaderboard' && <Leaderboard />}
         {activeSection === 'shop' && <ShopSection />}
+        {activeSection === 'notifications' && <NotificationCenter />}
+        {activeSection === 'crafting' && <Crafting />}
+        {activeSection === 'achievements' && <Achievements />}
+        {activeSection === 'npc' && <NpcDialog />}
       </main>
+      <ToastContainer />
     </div>
   );
 }
@@ -168,13 +177,15 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
           <div className="font-mono text-xs text-gray-600 mb-4 tracking-widest">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: '🗺️', title: 'Карта города', desc: 'CodeGrid-9 на карте — открывай районы, находи миссии и боссов.', color: '#00ffff', section: 'map', btn: 'НА КАРТУ' },
-              { icon: '📡', title: 'Уроки Python', desc: 'Теория + практика. Читай, смотри примеры, пиши код в браузере.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
-              { icon: '📜', title: 'Квесты', desc: 'Сюжетные и обучающие задания от The Archive. Следи за прогрессом.', color: '#00aaff', section: 'quests', btn: 'МИССИИ' },
+              { icon: '🗺️', title: 'Карта города', desc: 'CodeGrid-9 на карте — районы, фракции, миссии.', color: '#00ffff', section: 'map', btn: 'НА КАРТУ' },
+              { icon: '📡', title: 'Уроки Python', desc: 'Теория + практика. Читай, смотри примеры, пиши код.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
+              { icon: '💬', title: 'Агенты Archive', desc: 'Диалоги с NPC: PYTH-0N, K4I, Void Trader. Лор + награды.', color: '#00ff41', section: 'npc', btn: 'ГОВОРИТЬ' },
+              { icon: '📜', title: 'Квесты', desc: 'Сюжетные и обучающие задания от The Archive.', color: '#00aaff', section: 'quests', btn: 'МИССИИ' },
+              { icon: '🏆', title: 'Достижения', desc: 'Python, бои, исследования — 18+ ачивок с наградами.', color: '#ffff00', section: 'achievements', btn: 'СМОТРЕТЬ' },
               { icon: '⚔️', title: 'Code Combat', desc: 'Сражайся с NEXUS кодом. Action Phase 12 секунд.', color: '#ff00ff', section: 'battle', btn: 'В БОЙ' },
               { icon: '🏰', title: 'Подземелья', desc: 'Тесты по Python с выбором ответов. Зарабатывай лут.', color: '#ffaa00', section: 'dungeon', btn: 'ВОЙТИ' },
-              { icon: '🌑', title: 'Чёрный Рынок', desc: 'Void Relic, Neon Core, Glitch Box — имплант-лут нетраннера.', color: '#aa00ff', section: 'shop', btn: 'ТОРГОВАТЬ' },
-              { icon: '🏆', title: 'Рейтинг', desc: 'Syntax Colosseum — кто лучший хакер CodeGrid-9?', color: '#ffff00', section: 'leaderboard', btn: 'РЕЙТИНГ' },
+              { icon: '🔨', title: 'Крафт', desc: 'Создавай уникальные импланты из ресурсов миссий.', color: '#aa00ff', section: 'crafting', btn: 'СОЗДАВАТЬ' },
+              { icon: '🌑', title: 'Чёрный Рынок', desc: 'Void Relic, Neon Core, Glitch Box — имплант-лут.', color: '#aa00ff', section: 'shop', btn: 'ТОРГОВАТЬ' },
             ].map(item => (
               <div key={item.section}
                 className="cyber-panel p-5 cursor-pointer group hover:-translate-y-1 transition-all duration-200"

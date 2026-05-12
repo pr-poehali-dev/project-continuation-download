@@ -147,10 +147,10 @@ export default function Landing({ onLogin, onRegister, onTutorial }: Props) {
         {/* Left */}
         <div className="flex-1 max-w-2xl">
           {/* Boot terminal */}
-          <div className="mb-6 font-mono text-xs space-y-0.5 h-16 overflow-hidden">
+          <div className="mb-6 font-mono text-xs space-y-0.5 min-h-[4rem]">
             {BOOT_LINES.slice(0, bootLine).map((line, i) => (
-              <div key={i} className={i === bootLine - 1 ? 'text-cyber-cyan animate-pulse' : 'text-gray-700'}>
-                {line}
+              <div key={i} className={i === bootLine - 1 ? 'text-cyber-cyan' : 'text-gray-700'}>
+                {line}{i === bootLine - 1 && bootLine < BOOT_LINES.length && <span className="animate-pulse">█</span>}
               </div>
             ))}
           </div>
