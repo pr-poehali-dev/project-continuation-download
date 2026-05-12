@@ -4,6 +4,7 @@ const URLS = {
   shop: "https://functions.poehali.dev/369b1247-fa90-4446-9c74-2b3373bf9c62",
   battle: "https://functions.poehali.dev/87c8743c-6ec8-4e87-9447-b63d585ef0a2",
   quest: "https://functions.poehali.dev/74ef1783-327c-4071-9393-e56320709565",
+  admin: "https://functions.poehali.dev/f59cf78a-fac8-4029-9629-9272c02fa98c",
 };
 
 function getToken(): string {
@@ -77,4 +78,47 @@ export const api = {
     complete: (dungeon_id: string, score_pct: number, xp: number, coins: number) =>
       call(URLS.quest, { action: "dungeon_complete", dungeon_id, score_pct, xp, coins }),
   },
+};
+
+// ─── Admin API (отдельная функция с двойной аутентификацией) ─────────────────
+function adminCall(secret: string, body: Record<string, unknown>) {
+  const token = getToken();
+  return fetch(URLS.admin, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Secret": secret,
+      ...(token ? { "X-Authorization": `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  }).then(r => r.json());
+}
+
+function adminGet(secret: string, action: string, params: Record<string, string> = {}) {
+  const token = getToken();
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  return fetch(`${URLS.admin}?${qs}`, {
+    headers: {
+      "X-Admin-Secret": secret,
+      ...(token ? { "X-Authorization": `Bearer ${token}` } : {}),
+    },
+  }).then(r => r.json());
+}
+
+export const adminApi = {
+  stats:        (secret: string) => adminGet(secret, "stats"),
+  players:      (secret: string, params?: { search?: string; limit?: number; offset?: number }) =>
+    adminGet(secret, "players", {
+      ...(params?.search  ? { search: params.search }          : {}),
+      ...(params?.limit   ? { limit: String(params.limit) }    : {}),
+      ...(params?.offset  ? { offset: String(params.offset) }  : {}),
+    }),
+  playerDetail: (secret: string, user_id: number) => adminGet(secret, "player_detail", { user_id: String(user_id) }),
+  playerEdit:   (secret: string, user_id: number, fields: Record<string, unknown>) =>
+    adminCall(secret, { action: "player_edit", user_id, ...fields }),
+  playerBan:    (secret: string, user_id: number) => adminCall(secret, { action: "player_ban", user_id }),
+  items:        (secret: string) => adminGet(secret, "items"),
+  itemCreate:   (secret: string, data: Record<string, unknown>) => adminCall(secret, { action: "item_create", ...data }),
+  itemUpdate:   (secret: string, data: Record<string, unknown>) => adminCall(secret, { action: "item_update", ...data }),
+  itemDelete:   (secret: string, id: number) => adminCall(secret, { action: "item_delete", id }),
 };
