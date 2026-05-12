@@ -9,12 +9,14 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { id: 'home',        label: 'Главная',  icon: 'Home',        color: '#00ffff' },
-  { id: 'profile',     label: 'Профиль',  icon: 'User',        color: '#00ffff' },
-  { id: 'lessons',     label: 'Уроки',    icon: 'BookOpen',    color: '#00ff41' },
-  { id: 'battle',      label: 'Бой',      icon: 'Sword',       color: '#ff00ff' },
-  { id: 'shop',        label: 'Магазин',  icon: 'ShoppingBag', color: '#ffaa00' },
-  { id: 'leaderboard', label: 'Рейтинг',  icon: 'Trophy',      color: '#ffff00' },
+  { id: 'home',        label: 'Главная',     icon: 'Home',        color: '#00ffff' },
+  { id: 'profile',     label: 'Профиль',     icon: 'User',        color: '#00ffff' },
+  { id: 'lessons',     label: 'Уроки',       icon: 'BookOpen',    color: '#00ff41' },
+  { id: 'quests',      label: 'Квесты',      icon: 'Scroll',      color: '#00aaff' },
+  { id: 'battle',      label: 'Code Combat', icon: 'Sword',       color: '#ff00ff' },
+  { id: 'dungeon',     label: 'Подземелья',  icon: 'Castle',      color: '#ffaa00' },
+  { id: 'shop',        label: 'Магазин',     icon: 'ShoppingBag', color: '#aa00ff' },
+  { id: 'leaderboard', label: 'Рейтинг',     icon: 'Trophy',      color: '#ffff00' },
 ];
 
 // GDD class mapping

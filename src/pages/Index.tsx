@@ -7,15 +7,21 @@ import Leaderboard from '@/components/Leaderboard';
 import ShopSection from '@/components/ShopSection';
 import AuthScreen from '@/components/AuthScreen';
 import CreateCharacter from '@/components/CreateCharacter';
+import Landing from '@/components/Landing';
+import Tutorial from '@/components/Tutorial';
+import Dungeon from '@/components/Dungeon';
+import QuestLog from '@/components/QuestLog';
 import { useGame } from '@/lib/GameContext';
 
-type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'leaderboard' | 'shop';
+type AppView = 'landing' | 'tutorial' | 'login' | 'register';
+type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'leaderboard' | 'shop';
 
 export default function Index() {
   const { token, character, authLoading } = useGame();
   const [activeSection, setActiveSection] = useState<Section>('home');
   const [visible, setVisible] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [appView, setAppView] = useState<AppView>('landing');
 
   const navigate = (section: string) => {
     setVisible(false);
@@ -40,8 +46,33 @@ export default function Index() {
     );
   }
 
-  // Not logged in
-  if (!token) return <AuthScreen />;
+  // Not logged in — show landing / tutorial / auth
+  if (!token) {
+    if (appView === 'tutorial') {
+      return (
+        <Tutorial
+          onBack={() => setAppView('landing')}
+          onRegister={() => setAppView('register')}
+        />
+      );
+    }
+    if (appView === 'login' || appView === 'register') {
+      return (
+        <AuthScreen
+          mode={appView}
+          onSwitch={m => setAppView(m)}
+          onBack={() => setAppView('landing')}
+        />
+      );
+    }
+    return (
+      <Landing
+        onLogin={() => setAppView('login')}
+        onRegister={() => setAppView('register')}
+        onTutorial={() => setAppView('tutorial')}
+      />
+    );
+  }
 
   // No character
   if (!character) return <CreateCharacter />;
@@ -67,6 +98,8 @@ export default function Index() {
         {activeSection === 'profile' && <CharacterProfile />}
         {activeSection === 'lessons' && <LessonsSection />}
         {activeSection === 'battle' && <BattleSystem />}
+        {activeSection === 'dungeon' && <Dungeon />}
+        {activeSection === 'quests' && <QuestLog onNavigate={navigate} />}
         {activeSection === 'leaderboard' && <Leaderboard />}
         {activeSection === 'shop' && <ShopSection />}
       </main>
@@ -114,7 +147,7 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
             { label: 'Уровень', value: character.level, color: charColor },
             { label: 'XP', value: `${character.xp}/${character.xp_to_next}`, color: '#00ffff', bar: xpPct },
             { label: 'HP', value: `${character.hp}/${character.max_hp}`, color: '#ff4060', bar: Math.round((character.hp / character.max_hp) * 100) },
-            { label: 'Монеты', value: `🪙 ${character.coins}`, color: '#ffaa00' },
+            { label: 'Creds', value: `⚡ ${character.coins}`, color: '#ffaa00' },
           ].map(stat => (
             <div key={stat.label} className="cyber-panel p-4 animate-fade-in-up" style={{ borderColor: stat.color + '20' }}>
               <div className="text-gray-600 font-mono text-xs mb-1">{stat.label}</div>
@@ -133,9 +166,12 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
           <div className="font-mono text-xs text-gray-600 mb-4 tracking-widest">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: '📡', title: 'Миссии Archive', desc: 'Изучай запрещённый Python. Каждый урок — удар по NEXUS.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
-              { icon: '⚔️', title: 'Code Combat', desc: 'Пиши код в реальном времени — атакуй врагов. Action Phase 12 сек.', color: '#ff00ff', section: 'battle', btn: 'В БОЙ' },
+              { icon: '📡', title: 'Уроки Python', desc: 'Теория + практика. Читай, смотри примеры, пиши код в браузере.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
+              { icon: '📜', title: 'Квесты', desc: 'Сюжетные и обучающие задания от The Archive. Следи за прогрессом.', color: '#00aaff', section: 'quests', btn: 'МИССИИ' },
+              { icon: '⚔️', title: 'Code Combat', desc: 'Сражайся с NEXUS кодом. Action Phase 12 секунд.', color: '#ff00ff', section: 'battle', btn: 'В БОЙ' },
+              { icon: '🏰', title: 'Подземелья', desc: 'Тесты по Python с выбором ответов. Зарабатывай лут.', color: '#ffaa00', section: 'dungeon', btn: 'ВОЙТИ' },
               { icon: '🌑', title: 'Чёрный Рынок', desc: 'Void Relic, Neon Core, Glitch Box — имплант-лут нетраннера.', color: '#aa00ff', section: 'shop', btn: 'ТОРГОВАТЬ' },
+              { icon: '🏆', title: 'Рейтинг', desc: 'Syntax Colosseum — кто лучший хакер CodeGrid-9?', color: '#ffff00', section: 'leaderboard', btn: 'РЕЙТИНГ' },
             ].map(item => (
               <div key={item.section}
                 className="cyber-panel p-5 cursor-pointer group hover:-translate-y-1 transition-all duration-200"
