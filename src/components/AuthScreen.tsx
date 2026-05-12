@@ -1,6 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/lib/GameContext';
 import Icon from '@/components/ui/icon';
+
+// GDD: CodeGrid-9, 2087 — Python запрещён, нетраннеры в подполье
+const LORE_LINES = [
+  '> ПОДКЛЮЧЕНИЕ К UNDERNET_HUB...',
+  '> ШИФРОВАНИЕ КАНАЛА... [OK]',
+  '> ОБХОД NEXUS-FIREWALL... [OK]',
+  '> ВЫ ВОШЛИ В ПОДПОЛЬЕ THE ARCHIVE',
+  '> PYTHON НЕ ЗАПРЕЩЁН ЗДЕСЬ',
+];
 
 type AuthTab = 'login' | 'register';
 
@@ -26,18 +35,30 @@ export default function AuthScreen() {
     if (result.error) setError(result.error);
   };
 
+  const [bootLine, setBootLine] = useState(0);
+  useEffect(() => {
+    if (bootLine < LORE_LINES.length) {
+      const t = setTimeout(() => setBootLine(l => l + 1), 320);
+      return () => clearTimeout(t);
+    }
+  }, [bootLine]);
+
   return (
     <div className="min-h-screen bg-cyber-dark relative overflow-hidden">
-      <div className="absolute inset-0 cyber-grid opacity-30" />
+      <div className="absolute inset-0 cyber-grid opacity-20" />
       <div className="absolute inset-0 scanlines pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyber-cyan/4 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyber-magenta/4 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-cyber-cyan/3 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyber-magenta/3 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header — logo + auth tabs */}
-      <header className="relative z-20 flex items-center justify-between px-6 lg:px-12 py-5 border-b border-cyber-cyan/10">
-        <div className="font-orbitron text-2xl font-black tracking-wider">
-          <span className="text-cyber-cyan">CODE</span>
-          <span className="text-cyber-magenta">RPG</span>
+      {/* Header */}
+      <header className="relative z-20 flex items-center justify-between px-6 lg:px-12 py-4 border-b border-cyber-cyan/10">
+        <div className="flex items-center gap-3">
+          <div className="font-orbitron text-2xl font-black tracking-wider">
+            <span className="text-cyber-cyan">CODE</span><span className="text-cyber-magenta">RPG</span>
+          </div>
+          <div className="hidden lg:block font-mono text-[10px] text-gray-700 border border-gray-800 px-2 py-0.5">
+            v2.087 · CODEGRID-9
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -64,27 +85,49 @@ export default function AuthScreen() {
       </header>
 
       {/* Body */}
-      <div className="relative z-10 flex min-h-[calc(100vh-73px)]">
+      <div className="relative z-10 flex min-h-[calc(100vh-65px)]">
         {/* Left hero */}
-        <div className="flex-1 flex flex-col justify-center px-8 lg:px-20 py-12">
-          <div className="font-mono text-cyber-cyan text-xs tracking-widest mb-4 opacity-60">
-            // ДОБРО ПОЖАЛОВАТЬ В СИСТЕМУ
+        <div className="flex-1 flex flex-col justify-center px-8 lg:px-20 py-10">
+          {/* Boot terminal */}
+          <div className="mb-6 font-mono text-xs space-y-0.5 h-[80px]">
+            {LORE_LINES.slice(0, bootLine).map((line, i) => (
+              <div key={i} className={i === bootLine - 1 ? 'text-cyber-cyan' : 'text-gray-700'}>{line}</div>
+            ))}
           </div>
-          <h1 className="font-orbitron text-4xl lg:text-6xl font-black text-white leading-tight mb-6">
-            УЧИСЬ<br />
-            <span className="text-cyber-cyan">КОД</span><span className="text-cyber-magenta">ИТЬ</span><br />
-            ПОБЕЖДАЙ
+
+          <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-3 uppercase">
+            // 2087 · Мегаполис CodeGrid-9 · Python вне закона
+          </div>
+          <h1 className="font-orbitron text-4xl lg:text-5xl font-black text-white leading-tight mb-5">
+            НАПИШИ КОД.<br />
+            <span className="text-cyber-cyan">ИЗМЕНИ</span>{' '}
+            <span className="text-cyber-magenta">СИСТЕМУ</span><span className="text-white">.</span>
           </h1>
-          <p className="text-gray-400 font-rajdhani text-base lg:text-lg leading-relaxed mb-8 max-w-md">
-            RPG-игра, где каждая строка Python — это удар по врагу.
-            Прокачивай персонажа, собирай экипировку, проходи квесты.
+          <p className="text-gray-500 font-rajdhani text-base lg:text-lg leading-relaxed mb-7 max-w-lg">
+            Корпорация NEXUS запретила Python. Но The Archive не сдаётся.
+            Стань нетраннером — каждая строка кода это удар по системе.
           </p>
 
+          {/* Factions strip */}
+          <div className="flex flex-wrap gap-3 mb-8">
+            {[
+              { name: 'NEXUS', color: '#ff4060', desc: 'Антагонист' },
+              { name: 'THE ARCHIVE', color: '#00ff41', desc: 'Сопротивление' },
+              { name: 'BLACK SYNTAX', color: '#aa00ff', desc: 'Синдикат' },
+              { name: 'ORDER OF CLEAN CODE', color: '#00ffff', desc: 'Секта' },
+            ].map(f => (
+              <div key={f.name} className="border px-2.5 py-1 font-mono text-[10px]"
+                style={{ borderColor: f.color + '40', color: f.color + 'cc' }}>
+                {f.name}
+              </div>
+            ))}
+          </div>
+
           <div className="flex gap-8 mb-10">
-            {[{ label: '50+', sub: 'уроков Python' }, { label: '20+', sub: 'врагов и боссов' }, { label: '100+', sub: 'предметов' }].map(s => (
+            {[{ label: '4', sub: 'акта сюжета' }, { label: '3', sub: 'класса персонажа' }, { label: '100+', sub: 'предметов' }].map(s => (
               <div key={s.sub}>
                 <div className="font-orbitron text-2xl text-cyber-cyan font-black">{s.label}</div>
-                <div className="text-gray-600 font-mono text-xs mt-0.5">{s.sub}</div>
+                <div className="text-gray-700 font-mono text-xs mt-0.5">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -92,9 +135,9 @@ export default function AuthScreen() {
           {/* 3 class previews */}
           <div className="flex gap-4">
             {[
-              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/c57f7ff6-a3a7-4783-8f10-0d9d80a09f23.jpg', name: 'Хакер', color: '#00ffff' },
-              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/2fd8ffba-85dd-4b30-aba1-ceb9dd168a5e.jpg', name: 'Нетраннер', color: '#ff00ff' },
-              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ba390b4d-c17b-4e41-933f-463af7aa414a.jpg', name: 'Самурай', color: '#ffff00' },
+              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/c57f7ff6-a3a7-4783-8f10-0d9d80a09f23.jpg', name: 'Hacker', color: '#00ff41' },
+              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/2fd8ffba-85dd-4b30-aba1-ceb9dd168a5e.jpg', name: 'Python-Junior', color: '#ff00ff' },
+              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ba390b4d-c17b-4e41-933f-463af7aa414a.jpg', name: 'Py-Backend', color: '#6644ff' },
             ].map(c => (
               <div key={c.name} className="flex flex-col items-center gap-1.5">
                 <div className="w-16 h-20 lg:w-20 lg:h-24 overflow-hidden border transition-all"

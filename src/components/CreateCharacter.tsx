@@ -3,39 +3,49 @@ import { useGame } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import Icon from '@/components/ui/icon';
 
+// GDD: 3 класса — Hacker (чёрно-зелёный), Python-Junior (неон), Python-Backend (тёмно-синий/фиолетовый)
 const CLASSES = [
   {
     id: 'hacker',
-    name: 'Хакер',
-    title: 'Мастер кода',
-    desc: 'Взламывает системы силой интеллекта. Высокий урон от заклинаний кода, средняя защита.',
+    name: 'Hacker',
+    title: 'Агрессивный взломщик',
+    subtitle: '// Скрипты · Автоматизация · Контроль',
+    desc: 'Мастер дебаффов и контроля. Пишет скрипты быстрее, чем NEXUS успевает защититься. Высокая скорость, глитч-атаки.',
     img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/c57f7ff6-a3a7-4783-8f10-0d9d80a09f23.jpg',
     stats: { strength: 8, agility: 10, intelligence: 15, defense: 7, luck: 10 },
-    color: '#00ffff',
-    bgGlow: '#00ffff',
-    strengths: ['🔵 Высокий интеллект', '🟡 Хорошая удача', '🟢 Быстрое обучение'],
+    color: '#00ff41',
+    bgGlow: '#00ff41',
+    perks: ['Lambda Strike', 'Infinite Loop Trap', 'Data Breach'],
+    style: 'Чёрно-зелёный неон, глитч',
+    strengths: ['⚡ Скорость атаки', '🎯 Дебаффы врагов', '🔮 Контроль боя'],
   },
   {
     id: 'netrunner',
-    name: 'Нетраннер',
-    title: 'Дух Сети',
-    desc: 'Существо киберпространства. Максимальный интеллект, молниеносная агилити, слабое тело.',
+    name: 'Python-Junior',
+    title: 'Универсальный нетраннер',
+    subtitle: '// Основы · Баланс · Адаптация',
+    desc: 'Универсальный боец подполья The Archive. Баланс между атакой и защитой. Быстро обучается новым концепциям Python.',
     img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/2fd8ffba-85dd-4b30-aba1-ceb9dd168a5e.jpg',
-    stats: { strength: 6, agility: 12, intelligence: 18, defense: 6, luck: 8 },
+    stats: { strength: 10, agility: 12, intelligence: 13, defense: 10, luck: 10 },
     color: '#ff00ff',
     bgGlow: '#ff00ff',
-    strengths: ['🔵 Макс. интеллект', '🟡 Высокая ловкость', '🔴 Слабая защита'],
+    perks: ['For Loop Barrage', 'If-Else Defense', 'Function Call'],
+    style: 'Яркий уличный неон',
+    strengths: ['⚖️ Сбалансированные статы', '🛡️ Защитные умения', '📚 Быстрое обучение'],
   },
   {
     id: 'street_samurai',
-    name: 'Самурай',
-    title: 'Уличный воин',
-    desc: 'Сила и броня. Бьёт твёрдо, держит удар. Меньше кода — больше ударов кулаком.',
+    name: 'Python-Backend',
+    title: 'Стратегический архитектор',
+    subtitle: '// Серверы · API · Архитектура',
+    desc: 'Корпоративный стратег, перешедший на сторону сопротивления. Высокий урон, AoE-атаки, долгосрочные эффекты.',
     img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ba390b4d-c17b-4e41-933f-463af7aa414a.jpg',
-    stats: { strength: 16, agility: 14, intelligence: 7, defense: 13, luck: 5 },
-    color: '#ffff00',
-    bgGlow: '#ffff00',
-    strengths: ['🔴 Высокая сила', '🟢 Хорошая защита', '🔵 Низкий интеллект'],
+    stats: { strength: 14, agility: 8, intelligence: 16, defense: 10, luck: 7 },
+    color: '#6644ff',
+    bgGlow: '#6644ff',
+    perks: ['API Summon', 'Async Overload', 'Database Strike'],
+    style: 'Тёмно-синий + фиолетовый',
+    strengths: ['💥 Высокий урон', '🌊 AoE атаки', '⏳ Долгосрочные эффекты'],
   },
 ];
 
@@ -149,11 +159,21 @@ export default function CreateCharacter() {
 
           {/* Class description */}
           <div className="mt-6 text-center max-w-sm">
-            <div className="font-orbitron text-xs mb-1" style={{ color: cls.color }}>{cls.title}</div>
-            <p className="text-gray-500 font-rajdhani text-sm leading-relaxed">{cls.desc}</p>
-            <div className="flex flex-wrap justify-center gap-2 mt-3">
+            <div className="font-mono text-[10px] mb-0.5" style={{ color: cls.color + '80' }}>{cls.subtitle}</div>
+            <div className="font-orbitron text-sm mb-2 font-bold" style={{ color: cls.color }}>{cls.title}</div>
+            <p className="text-gray-500 font-rajdhani text-sm leading-relaxed mb-3">{cls.desc}</p>
+            {/* Perks */}
+            <div className="flex flex-wrap justify-center gap-1.5 mb-2">
+              {cls.perks.map(p => (
+                <span key={p} className="font-mono text-[10px] px-2 py-0.5 border"
+                  style={{ borderColor: cls.color + '40', color: cls.color + 'cc', backgroundColor: cls.color + '08' }}>
+                  {p}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap justify-center gap-2 mt-1">
               {cls.strengths.map(s => (
-                <span key={s} className="text-xs font-mono text-gray-500">{s}</span>
+                <span key={s} className="text-xs font-mono text-gray-600">{s}</span>
               ))}
             </div>
           </div>

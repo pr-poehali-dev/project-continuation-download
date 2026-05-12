@@ -90,15 +90,21 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
 
       <div className="relative z-10 px-6 lg:px-10 py-10 max-w-5xl">
         {/* Welcome header */}
-        <div className="mb-10 animate-fade-in-up">
-          <div className="font-mono text-xs tracking-widest mb-2" style={{ color: charColor + '99' }}>
-            // ДОБРО ПОЖАЛОВАТЬ
+        <div className="mb-8 animate-fade-in-up">
+          <div className="font-mono text-[10px] text-gray-700 tracking-widest mb-1">
+            // UNDERNET HUB · CODEGRID-9 · 2087
           </div>
           <h1 className="font-orbitron text-3xl lg:text-4xl text-white mb-1">
-            ПРИВЕТ, <span style={{ color: charColor }}>{character.name}</span>
+            АГЕНТ <span style={{ color: charColor }}>{character.name}</span>
           </h1>
-          <div className="font-mono text-sm text-gray-500">
-            Уровень {character.level} · {character.class.replace('_', ' ')} · Глава {character.current_chapter}
+          <div className="flex items-center gap-3 flex-wrap mt-1">
+            <span className="font-mono text-xs" style={{ color: charColor }}>
+              {character.class === 'hacker' ? 'HACKER' : character.class === 'netrunner' ? 'PYTHON-JUNIOR' : 'PYTHON-BACKEND'}
+            </span>
+            <span className="text-gray-700 font-mono text-xs">·</span>
+            <span className="text-gray-500 font-mono text-xs">LVL {character.level}</span>
+            <span className="text-gray-700 font-mono text-xs">·</span>
+            <span className="text-gray-500 font-mono text-xs">АКТ {character.current_chapter}</span>
           </div>
         </div>
 
@@ -127,9 +133,9 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
           <div className="font-mono text-xs text-gray-600 mb-4 tracking-widest">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: '📚', title: 'Уроки Python', desc: 'Продолжить обучение и зарабатывать XP', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
-              { icon: '⚔️', title: 'В бой!', desc: 'Сразиться с врагами и получить лут', color: '#ff00ff', section: 'battle', btn: 'АТАКОВАТЬ' },
-              { icon: '🛍️', title: 'Магазин', desc: 'Купить снаряжение или открыть лутбокс', color: '#ffaa00', section: 'shop', btn: 'ОТКРЫТЬ' },
+              { icon: '📡', title: 'Миссии Archive', desc: 'Изучай запрещённый Python. Каждый урок — удар по NEXUS.', color: '#00ff41', section: 'lessons', btn: 'УЧИТЬСЯ' },
+              { icon: '⚔️', title: 'Code Combat', desc: 'Пиши код в реальном времени — атакуй врагов. Action Phase 12 сек.', color: '#ff00ff', section: 'battle', btn: 'В БОЙ' },
+              { icon: '🌑', title: 'Чёрный Рынок', desc: 'Void Relic, Neon Core, Glitch Box — имплант-лут нетраннера.', color: '#aa00ff', section: 'shop', btn: 'ТОРГОВАТЬ' },
             ].map(item => (
               <div key={item.section}
                 className="cyber-panel p-5 cursor-pointer group hover:-translate-y-1 transition-all duration-200"

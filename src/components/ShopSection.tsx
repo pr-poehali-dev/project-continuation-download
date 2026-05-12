@@ -16,10 +16,11 @@ const STAT_LABELS: Record<string, string> = {
   strength: 'Сила', agility: 'Ловкость', intelligence: 'Интеллект', defense: 'Защита', luck: 'Удача',
 };
 
+// GDD: Glitch Box / Neon Core / Void Relic
 const LOOTBOXES = [
-  { type: 'basic', name: 'Базовый', price: 100, emoji: '📦', desc: 'common / uncommon', color: '#aaaaaa' },
-  { type: 'advanced', name: 'Продвинутый', price: 300, emoji: '🎁', desc: 'uncommon / rare / epic', color: '#00aaff' },
-  { type: 'legendary', name: 'Легендарный', price: 800, emoji: '💎', desc: 'rare / epic / legendary', color: '#ffaa00' },
+  { type: 'basic', name: 'Glitch Box', price: 100, emoji: '📦', desc: 'Common / Uncommon', color: '#aaaaaa', lore: 'Стандартный лут с чёрного рынка CodeGrid-9' },
+  { type: 'advanced', name: 'Neon Core', price: 300, emoji: '🔷', desc: 'Uncommon / Rare / Epic', color: '#00aaff', lore: 'Имплант-контейнер из лабораторий The Archive' },
+  { type: 'legendary', name: 'Void Relic', price: 800, emoji: '🌑', desc: 'Rare / Epic / Legendary', color: '#aa00ff', lore: 'Артефакт эпохи до Великого Отключения 2048' },
 ] as const;
 
 interface ShopItem {
@@ -82,17 +83,24 @@ export default function ShopSection() {
   return (
     <section className="py-16 px-6">
       <div className="container mx-auto max-w-5xl">
-        <div className="text-center mb-10 animate-fade-in-up">
-          <div className="text-cyber-yellow font-mono text-xs tracking-widest mb-2">// МАГАЗИН</div>
-          <h2 className="font-orbitron text-3xl text-white">ЧЁРНЫЙ РЫНОК</h2>
-          <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-cyber-yellow to-transparent mx-auto mt-3" />
+        <div className="mb-6 animate-fade-in-up">
+          <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-1">// BLACK MARKET · UNDERNET HUB</div>
+          <h2 className="font-orbitron text-2xl text-white">
+            ЧЁРНЫЙ <span className="text-cyber-yellow">РЫНОК</span>
+          </h2>
+          <div className="font-mono text-[10px] text-gray-700 mt-0.5">Нелегальный торговец имплантами · CodeGrid-9 · 2087</div>
         </div>
 
-        {/* Coins display */}
+        {/* Wallet: Creds + NeuroShards */}
         {character && (
-          <div className="flex justify-center mb-6">
-            <div className="border border-cyber-yellow/40 bg-cyber-yellow/5 px-6 py-2 font-orbitron text-cyber-yellow text-xl">
-              🪙 {character.coins} монет
+          <div className="flex gap-3 mb-6 flex-wrap">
+            <div className="border border-yellow-500/30 bg-yellow-500/5 px-4 py-2 flex items-center gap-2">
+              <span className="text-yellow-400 font-orbitron text-sm">⚡ {character.coins}</span>
+              <span className="font-mono text-[10px] text-gray-600">Creds</span>
+            </div>
+            <div className="border border-purple-500/30 bg-purple-500/5 px-4 py-2 flex items-center gap-2">
+              <span className="text-purple-400 font-orbitron text-sm">◈ 0</span>
+              <span className="font-mono text-[10px] text-gray-600">NeuroShards</span>
             </div>
           </div>
         )}
@@ -115,11 +123,12 @@ export default function ShopSection() {
           <div className="font-orbitron text-xs text-gray-400 mb-4 tracking-widest">// ЛУТБОКСЫ</div>
           <div className="grid grid-cols-3 gap-4">
             {LOOTBOXES.map(box => (
-              <div key={box.type} className="cyber-panel p-5 text-center" style={{ borderColor: box.color + '30' }}>
+              <div key={box.type} className="cyber-panel p-5 text-center" style={{ borderColor: box.color + '40', boxShadow: `0 0 20px ${box.color}10` }}>
                 <div className="text-4xl mb-2">{box.emoji}</div>
-                <div className="font-orbitron text-sm mb-1" style={{ color: box.color }}>{box.name}</div>
-                <div className="text-gray-500 text-xs font-mono mb-3">{box.desc}</div>
-                <div className="font-orbitron text-cyber-yellow mb-3">🪙 {box.price}</div>
+                <div className="font-orbitron text-sm mb-0.5" style={{ color: box.color }}>{box.name}</div>
+                <div className="text-gray-600 text-xs font-mono mb-1">{box.desc}</div>
+                <div className="text-gray-700 font-mono text-[10px] mb-3 leading-tight">{box.lore}</div>
+                <div className="font-orbitron text-yellow-400 mb-3 text-sm">⚡ {box.price} Creds</div>
                 <button
                   onClick={() => openLootbox(box.type)}
                   disabled={lootLoading === box.type || !character || character.coins < box.price}

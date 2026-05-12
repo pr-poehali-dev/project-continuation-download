@@ -410,3 +410,82 @@
   color: var(--cyber-cyan);
   border-bottom: 2px solid var(--cyber-cyan);
 }
+
+/* GDD: Hacker class — green glitch theme */
+.theme-hacker {
+  --class-color: #00ff41;
+}
+.theme-netrunner {
+  --class-color: #ff00ff;
+}
+.theme-backend {
+  --class-color: #6644ff;
+}
+
+/* GDD: Monaco editor dark chrome */
+.monaco-wrapper {
+  border: 1px solid #00ff4130;
+}
+.monaco-wrapper .monaco-editor {
+  background: #050a0e !important;
+}
+
+/* GDD: Glitch blink cursor */
+@keyframes blink-cursor {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.cursor-blink {
+  animation: blink-cursor 1s infinite;
+}
+
+/* GDD: Action phase timer pulse */
+@keyframes timer-warning {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.timer-warning {
+  animation: timer-warning 0.5s infinite;
+}
+
+/* GDD: Lore text subtle flicker */
+@keyframes lore-flicker {
+  0%,
+  97%,
+  100% {
+    opacity: 0.5;
+  }
+  98% {
+    opacity: 0.2;
+  }
+  99% {
+    opacity: 0.5;
+  }
+}
+.lore-text {
+  animation: lore-flicker 8s infinite;
+}
+
+/* Faction color badges */
+.faction-archive {
+  color: #00ff41;
+  border-color: #00ff4140;
+}
+.faction-syntax {
+  color: #aa00ff;
+  border-color: #aa00ff40;
+}
+.faction-order {
+  color: #00aaff;
+  border-color: #00aaff40;
+}

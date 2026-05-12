@@ -1,18 +1,25 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 
+// GDD фракции: The Archive, Black Syntax, Order of Clean Code, соло
 const ALL_PLAYERS = [
-  { rank: 1, name: 'Х4CK3R_PR1M3', level: 42, xp: 48200, guild: 'Корпорация Ноль', badge: '🔥', change: 'up' as const },
-  { rank: 2, name: 'NOVA_7', level: 38, xp: 41800, guild: 'Призраки Кода', badge: '⚡', change: 'same' as const, isMe: true },
-  { rank: 3, name: 'CyberWitch', level: 35, xp: 38100, guild: 'Нейро-клан', badge: '🌙', change: 'up' as const },
-  { rank: 4, name: 'QuantumByte', level: 31, xp: 32700, guild: 'Байт-форс', badge: '💎', change: 'down' as const },
-  { rank: 5, name: 'VOID_CODER', level: 28, xp: 29900, guild: 'Соло', badge: '🤖', change: 'up' as const },
-  { rank: 6, name: 'Neon_Ghost', level: 25, xp: 26400, guild: 'Призраки Кода', badge: '👻', change: 'down' as const },
-  { rank: 7, name: 'DataPunk_X', level: 22, xp: 22100, guild: 'Корпорация Ноль', badge: '🎭', change: 'same' as const },
-  { rank: 8, name: 'BinaryKing', level: 19, xp: 18600, guild: 'Байт-форс', badge: '👑', change: 'up' as const },
+  { rank: 1, name: 'Х4CK3R_PR1M3', level: 42, xp: 48200, guild: 'The Archive', badge: '🔥', change: 'up' as const, cls: 'Hacker' },
+  { rank: 2, name: 'NOVA_7', level: 38, xp: 41800, guild: 'The Archive', badge: '⚡', change: 'same' as const, isMe: true, cls: 'Python-Junior' },
+  { rank: 3, name: 'CyberWitch', level: 35, xp: 38100, guild: 'Black Syntax', badge: '🌙', change: 'up' as const, cls: 'Hacker' },
+  { rank: 4, name: 'QuantumByte', level: 31, xp: 32700, guild: 'Order of Clean Code', badge: '💎', change: 'down' as const, cls: 'Python-Backend' },
+  { rank: 5, name: 'VOID_CODER', level: 28, xp: 29900, guild: 'Соло', badge: '🤖', change: 'up' as const, cls: 'Python-Backend' },
+  { rank: 6, name: 'Neon_Ghost', level: 25, xp: 26400, guild: 'Black Syntax', badge: '👻', change: 'down' as const, cls: 'Python-Junior' },
+  { rank: 7, name: 'DataPunk_X', level: 22, xp: 22100, guild: 'Order of Clean Code', badge: '🎭', change: 'same' as const, cls: 'Hacker' },
+  { rank: 8, name: 'BinaryKing', level: 19, xp: 18600, guild: 'The Archive', badge: '👑', change: 'up' as const, cls: 'Python-Junior' },
 ];
 
-const GUILDS = ['Все', 'Корпорация Ноль', 'Призраки Кода', 'Нейро-клан', 'Байт-форс', 'Соло'];
+const GUILDS = ['Все', 'The Archive', 'Black Syntax', 'Order of Clean Code', 'Соло'];
+const FACTION_COLORS: Record<string, string> = {
+  'The Archive': '#00ff41',
+  'Black Syntax': '#aa00ff',
+  'Order of Clean Code': '#00aaff',
+  'Соло': '#666',
+};
 
 const RANK_STYLES = [
   { border: 'border-cyber-yellow/50', text: 'text-cyber-yellow', glow: '#ffff00' },
@@ -36,10 +43,12 @@ export default function Leaderboard() {
   return (
     <section className="py-16 px-6 bg-cyber-dark/30">
       <div className="container mx-auto max-w-4xl">
-        <div className="text-center mb-10 animate-fade-in-up">
-          <div className="text-cyber-yellow font-mono text-xs tracking-widest mb-2">// РЕЙТИНГ</div>
-          <h2 className="font-orbitron text-3xl text-white">ТОП ХАКЕРОВ</h2>
-          <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-cyber-yellow to-transparent mx-auto mt-3" />
+        <div className="mb-8 animate-fade-in-up">
+          <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-1">// SYNTAX COLOSSEUM · SEASON 1</div>
+          <h2 className="font-orbitron text-2xl text-white">
+            ТОП <span className="text-cyber-yellow">ХАКЕРОВ</span>
+          </h2>
+          <div className="font-mono text-[10px] text-gray-700 mt-0.5">CodeGrid-9 · Глобальный рейтинг · 2087</div>
         </div>
 
         {/* Top 3 Podium */}
@@ -137,7 +146,12 @@ export default function Leaderboard() {
               </div>
 
               {/* Guild */}
-              <div className="text-gray-500 text-xs font-mono hidden sm:block">{player.guild}</div>
+              <div className="hidden sm:block">
+                <span className="font-mono text-[10px]" style={{ color: FACTION_COLORS[player.guild] || '#666' }}>
+                  {player.guild}
+                </span>
+                <div className="text-gray-700 font-mono text-[9px]">{player.cls}</div>
+              </div>
 
               {/* XP */}
               <div className="font-orbitron text-sm text-cyber-yellow text-right">

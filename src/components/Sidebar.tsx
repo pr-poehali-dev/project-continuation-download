@@ -17,8 +17,15 @@ const NAV_ITEMS = [
   { id: 'leaderboard', label: 'Рейтинг',  icon: 'Trophy',      color: '#ffff00' },
 ];
 
+// GDD class mapping
 const CLASS_EMOJI: Record<string, string> = {
-  hacker: '🧑‍💻', netrunner: '🕶️', street_samurai: '⚔️',
+  hacker: '💀', netrunner: '🕶️', street_samurai: '⚡',
+};
+const CLASS_COLOR: Record<string, string> = {
+  hacker: '#00ff41', netrunner: '#ff00ff', street_samurai: '#6644ff',
+};
+const CLASS_LABEL: Record<string, string> = {
+  hacker: 'Hacker', netrunner: 'Python-Junior', street_samurai: 'Python-Backend',
 };
 
 export default function Sidebar({ activeSection, onNavigate, onCollapse }: SidebarProps) {
@@ -104,13 +111,19 @@ export default function Sidebar({ activeSection, onNavigate, onCollapse }: Sideb
 
         {/* Character mini card */}
         {character && !collapsed && (
-          <div className="mx-3 mt-3 p-3 border border-cyber-cyan/15 bg-cyber-cyan/3 flex-shrink-0">
+          <div className="mx-3 mt-3 p-3 border flex-shrink-0"
+            style={{ borderColor: (CLASS_COLOR[character.class] || '#00ffff') + '25', backgroundColor: (CLASS_COLOR[character.class] || '#00ffff') + '05' }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xl">{CLASS_EMOJI[character.class]}</span>
-              <div className="min-w-0">
-                <div className="text-cyber-cyan font-orbitron text-xs truncate">{character.name}</div>
-                <div className="text-gray-600 font-mono text-[10px]">LVL {character.level} · 🪙 {character.coins}</div>
+              <div className="min-w-0 flex-1">
+                <div className="font-orbitron text-xs truncate" style={{ color: CLASS_COLOR[character.class] || '#00ffff' }}>{character.name}</div>
+                <div className="text-gray-600 font-mono text-[10px]">{CLASS_LABEL[character.class]} · LVL {character.level}</div>
               </div>
+            </div>
+            {/* Creds + NeuroShards (Creds = coins по GDD) */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-mono text-[10px] text-yellow-500/80">⚡ {character.coins} Creds</div>
+              <div className="font-mono text-[10px] text-purple-400/60">◈ 0 NS</div>
             </div>
             {/* HP */}
             <div className="mb-1">
