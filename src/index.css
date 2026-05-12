@@ -185,6 +185,14 @@
   box-shadow: var(--cyber-glow-yellow);
 }
 
+/* Sidebar collapsed state — main content offset */
+.sidebar-expanded .main-with-sidebar {
+  padding-left: 224px;
+}
+.sidebar-collapsed .main-with-sidebar {
+  padding-left: 64px;
+}
+
 /* Panel */
 .cyber-panel {
   background: var(--cyber-panel);

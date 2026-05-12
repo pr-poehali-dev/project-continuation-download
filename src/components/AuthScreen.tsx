@@ -2,18 +2,23 @@ import { useState } from 'react';
 import { useGame } from '@/lib/GameContext';
 import Icon from '@/components/ui/icon';
 
+type AuthTab = 'login' | 'register';
+
 export default function AuthScreen() {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [tab, setTab] = useState<AuthTab>('login');
   const [form, setForm] = useState({ username: '', email: '', login: '', password: '' });
   const [error, setError] = useState('');
   const { login, register, loading } = useGame();
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k: string, v: string) => {
+    setError('');
+    setForm(f => ({ ...f, [k]: v }));
+  };
 
   const submit = async () => {
     setError('');
     let result;
-    if (mode === 'login') {
+    if (tab === 'login') {
       result = await login(form.login, form.password);
     } else {
       result = await register(form.username, form.email, form.password);
@@ -22,113 +27,189 @@ export default function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-cyber-dark flex items-center justify-center relative overflow-hidden cyber-grid scanlines">
-      {/* Background glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyber-cyan/5 rounded-full blur-3xl" />
-      <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-cyber-magenta/5 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-cyber-dark relative overflow-hidden">
+      <div className="absolute inset-0 cyber-grid opacity-30" />
+      <div className="absolute inset-0 scanlines pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyber-cyan/4 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyber-magenta/4 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-md px-6 animate-fade-in-up">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="font-orbitron text-5xl font-black mb-1">
-            <span className="text-cyber-cyan">CODE</span>
-            <span className="text-cyber-magenta">RPG</span>
-          </div>
-          <div className="text-gray-500 font-mono text-xs tracking-widest">ВОЙДИ В СИСТЕМУ · НАЧНИ ИГРУ</div>
+      {/* Header — logo + auth tabs */}
+      <header className="relative z-20 flex items-center justify-between px-6 lg:px-12 py-5 border-b border-cyber-cyan/10">
+        <div className="font-orbitron text-2xl font-black tracking-wider">
+          <span className="text-cyber-cyan">CODE</span>
+          <span className="text-cyber-magenta">RPG</span>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setTab('login'); setError(''); }}
+            className={`px-5 py-2 font-orbitron text-xs tracking-wider transition-all border ${
+              tab === 'login'
+                ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/10'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700'
+            }`}
+          >
+            ВОЙТИ
+          </button>
+          <button
+            onClick={() => { setTab('register'); setError(''); }}
+            className={`px-5 py-2 font-orbitron text-xs tracking-wider transition-all border ${
+              tab === 'register'
+                ? 'border-cyber-magenta text-cyber-magenta bg-cyber-magenta/10'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700'
+            }`}
+          >
+            РЕГИСТРАЦИЯ
+          </button>
+        </div>
+      </header>
 
-        {/* Auth panel */}
-        <div className="cyber-panel p-8">
-          {/* Tabs */}
-          <div className="flex mb-6 border-b border-cyber-cyan/20">
-            {([['login', 'ВОЙТИ'], ['register', 'РЕГИСТРАЦИЯ']] as const).map(([m, label]) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(''); }}
-                className={`flex-1 py-2 font-orbitron text-xs tracking-wider transition-all ${
-                  mode === m
-                    ? 'text-cyber-cyan border-b-2 border-cyber-cyan'
-                    : 'text-gray-600 hover:text-gray-400'
-                }`}
-              >
-                {label}
-              </button>
+      {/* Body */}
+      <div className="relative z-10 flex min-h-[calc(100vh-73px)]">
+        {/* Left hero */}
+        <div className="flex-1 flex flex-col justify-center px-8 lg:px-20 py-12">
+          <div className="font-mono text-cyber-cyan text-xs tracking-widest mb-4 opacity-60">
+            // ДОБРО ПОЖАЛОВАТЬ В СИСТЕМУ
+          </div>
+          <h1 className="font-orbitron text-4xl lg:text-6xl font-black text-white leading-tight mb-6">
+            УЧИСЬ<br />
+            <span className="text-cyber-cyan">КОД</span><span className="text-cyber-magenta">ИТЬ</span><br />
+            ПОБЕЖДАЙ
+          </h1>
+          <p className="text-gray-400 font-rajdhani text-base lg:text-lg leading-relaxed mb-8 max-w-md">
+            RPG-игра, где каждая строка Python — это удар по врагу.
+            Прокачивай персонажа, собирай экипировку, проходи квесты.
+          </p>
+
+          <div className="flex gap-8 mb-10">
+            {[{ label: '50+', sub: 'уроков Python' }, { label: '20+', sub: 'врагов и боссов' }, { label: '100+', sub: 'предметов' }].map(s => (
+              <div key={s.sub}>
+                <div className="font-orbitron text-2xl text-cyber-cyan font-black">{s.label}</div>
+                <div className="text-gray-600 font-mono text-xs mt-0.5">{s.sub}</div>
+              </div>
             ))}
           </div>
 
-          <div className="space-y-4">
-            {mode === 'register' && (
-              <>
-                <CyberInput label="ИМЯ ХАКЕРА" placeholder="nova_7" value={form.username} onChange={v => set('username', v)} />
-                <CyberInput label="EMAIL" type="email" placeholder="you@neon.city" value={form.email} onChange={v => set('email', v)} />
-              </>
-            )}
-            {mode === 'login' && (
-              <CyberInput label="ЛОГИН ИЛИ EMAIL" placeholder="nova_7 или you@neon.city" value={form.login} onChange={v => set('login', v)} />
-            )}
-            <CyberInput label="ПАРОЛЬ" type="password" placeholder="••••••••" value={form.password} onChange={v => set('password', v)}
-              onEnter={submit} />
-          </div>
-
-          {error && (
-            <div className="mt-4 border border-red-500/40 bg-red-500/10 p-3 text-red-400 font-mono text-xs">
-              ⚠ {error}
-            </div>
-          )}
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="cyber-btn w-full mt-6 py-3 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <span className="w-3 h-3 border border-cyber-cyan border-t-transparent rounded-full animate-spin" />
-                ПОДКЛЮЧЕНИЕ...
-              </>
-            ) : (
-              <>
-                <Icon name="Zap" size={14} />
-                {mode === 'login' ? 'ВОЙТИ В СИСТЕМУ' : 'СОЗДАТЬ АККАУНТ'}
-              </>
-            )}
-          </button>
-
-          <div className="mt-4 text-center text-gray-600 font-mono text-xs">
-            {mode === 'login'
-              ? <span>Нет аккаунта? <button onClick={() => setMode('register')} className="text-cyber-cyan hover:underline">Регистрация</button></span>
-              : <span>Уже есть аккаунт? <button onClick={() => setMode('login')} className="text-cyber-cyan hover:underline">Войти</button></span>
-            }
+          {/* 3 class previews */}
+          <div className="flex gap-4">
+            {[
+              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/c57f7ff6-a3a7-4783-8f10-0d9d80a09f23.jpg', name: 'Хакер', color: '#00ffff' },
+              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/2fd8ffba-85dd-4b30-aba1-ceb9dd168a5e.jpg', name: 'Нетраннер', color: '#ff00ff' },
+              { img: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ba390b4d-c17b-4e41-933f-463af7aa414a.jpg', name: 'Самурай', color: '#ffff00' },
+            ].map(c => (
+              <div key={c.name} className="flex flex-col items-center gap-1.5">
+                <div className="w-16 h-20 lg:w-20 lg:h-24 overflow-hidden border transition-all"
+                  style={{ borderColor: c.color + '50', boxShadow: `0 0 16px ${c.color}20` }}>
+                  <img src={c.img} alt={c.name} className="w-full h-full object-cover object-top" />
+                </div>
+                <span className="font-orbitron text-[10px]" style={{ color: c.color }}>{c.name}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Footer hint */}
-        <div className="text-center mt-6 text-gray-700 font-mono text-xs">
-          КОРПОРАЦИЯ НОЛЬ НЕ ОДОБРЯЕТ ЭТОТ ВХОД
+        {/* Right form — desktop */}
+        <div className="hidden lg:flex items-center justify-center px-12 py-12 w-[460px]">
+          <div className="w-full">
+            <AuthFormPanel tab={tab} form={form} set={set} error={error} loading={loading} onSubmit={submit} onSwitch={setTab} />
+          </div>
         </div>
+      </div>
+
+      {/* Mobile form pinned to bottom */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 p-4 bg-cyber-dark/98 border-t border-white/5">
+        <AuthFormPanel tab={tab} form={form} set={set} error={error} loading={loading} onSubmit={submit} onSwitch={setTab} compact />
       </div>
     </div>
   );
 }
 
-function CyberInput({
-  label, type = 'text', placeholder, value, onChange, onEnter
+function AuthFormPanel({
+  tab, form, set, error, loading, onSubmit, onSwitch, compact = false,
 }: {
+  tab: AuthTab;
+  form: Record<string, string>;
+  set: (k: string, v: string) => void;
+  error: string;
+  loading: boolean;
+  onSubmit: () => void;
+  onSwitch: (t: AuthTab) => void;
+  compact?: boolean;
+}) {
+  const accent = tab === 'login' ? '#00ffff' : '#ff00ff';
+
+  return (
+    <div className="cyber-panel p-6" style={{ borderColor: accent + '30' }}>
+      <div className={`mb-5 ${compact ? 'hidden' : ''}`}>
+        <h2 className="font-orbitron text-xl text-white mb-1">
+          {tab === 'login' ? 'ВХОД В СИСТЕМУ' : 'РЕГИСТРАЦИЯ'}
+        </h2>
+        <div className="font-mono text-xs" style={{ color: accent + 'aa' }}>
+          {tab === 'login' ? '// введи свои данные' : '// создай аккаунт'}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {tab === 'register' && (
+          <>
+            <CyberField label="ИМЯ ХАКЕРА" placeholder="nova_x1" value={form.username} onChange={v => set('username', v)} accent={accent} />
+            <CyberField label="EMAIL" type="email" placeholder="you@neon.city" value={form.email} onChange={v => set('email', v)} accent={accent} />
+          </>
+        )}
+        {tab === 'login' && (
+          <CyberField label="ЛОГИН ИЛИ EMAIL" placeholder="nova_x1" value={form.login} onChange={v => set('login', v)} accent={accent} />
+        )}
+        <CyberField label="ПАРОЛЬ" type="password" placeholder="••••••••" value={form.password}
+          onChange={v => set('password', v)} onEnter={onSubmit} accent={accent} />
+      </div>
+
+      {error && (
+        <div className="mt-3 p-2.5 border border-red-500/40 bg-red-500/8 text-red-400 font-mono text-xs">
+          ⚠ {error}
+        </div>
+      )}
+
+      <button
+        onClick={onSubmit}
+        disabled={loading}
+        className="w-full mt-4 py-3 font-orbitron text-sm tracking-wider border transition-all
+          flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+        style={{ borderColor: accent, color: accent, backgroundColor: accent + '15' }}
+      >
+        {loading
+          ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          : <><Icon name="Zap" size={14} />{tab === 'login' ? 'ВОЙТИ' : 'СОЗДАТЬ АККАУНТ'}</>
+        }
+      </button>
+
+      <div className="mt-3 text-center text-gray-600 font-mono text-xs">
+        {tab === 'login'
+          ? <span>Нет аккаунта?{' '}<button onClick={() => onSwitch('register')} style={{ color: '#ff00ff' }} className="hover:underline">Регистрация</button></span>
+          : <span>Уже есть аккаунт?{' '}<button onClick={() => onSwitch('login')} style={{ color: '#00ffff' }} className="hover:underline">Войти</button></span>
+        }
+      </div>
+    </div>
+  );
+}
+
+function CyberField({ label, type = 'text', placeholder, value, onChange, onEnter, accent }: {
   label: string; type?: string; placeholder?: string;
-  value: string; onChange: (v: string) => void; onEnter?: () => void;
+  value: string; onChange: (v: string) => void;
+  onEnter?: () => void; accent: string;
 }) {
   return (
     <div>
-      <label className="block text-cyber-cyan font-mono text-xs mb-1 tracking-widest">{label}</label>
+      <label className="block font-mono text-[10px] tracking-widest mb-1" style={{ color: accent + '99' }}>{label}</label>
       <input
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={e => onChange(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && onEnter?.()}
-        className="w-full bg-black/50 border border-cyber-cyan/30 text-white font-mono text-sm px-4 py-3
-          focus:outline-none focus:border-cyber-cyan focus:shadow-[0_0_12px_#00ffff30]
-          placeholder:text-gray-700 transition-all duration-200"
+        onFocus={e => { e.currentTarget.style.borderColor = accent + '80'; e.currentTarget.style.boxShadow = `0 0 10px ${accent}20`; }}
+        onBlur={e => { e.currentTarget.style.borderColor = accent + '30'; e.currentTarget.style.boxShadow = 'none'; }}
+        className="w-full bg-black/50 border text-white font-mono text-sm px-3 py-2.5
+          focus:outline-none placeholder:text-gray-700 transition-all"
+        style={{ borderColor: accent + '30' }}
       />
     </div>
   );
