@@ -129,8 +129,59 @@ def get_char(cur, token):
     )
     return cur.fetchone()
 
+def award_xp(cur, char_id: int, xp_gain: int, coins_gain: int) -> dict:
+    """Добавить XP и монеты персонажу, обработать level up. Возвращает результат."""
+    cur.execute(
+        f"SELECT level, xp, xp_to_next, coins, max_hp FROM {SCHEMA}.characters WHERE id=%s",
+        (char_id,)
+    )
+    row = cur.fetchone()
+    if not row:
+        return {}
+    level, xp, xp_to_next, coins, max_hp = row
+
+    new_xp = xp + xp_gain
+    new_coins = coins + coins_gain
+    new_level = level
+    leveled_up = False
+
+    while new_xp >= xp_to_next:
+        new_xp -= xp_to_next
+        new_level += 1
+        xp_to_next = int(xp_to_next * 1.4)
+        leveled_up = True
+        # При каждом level up: +5 max_hp, +1 к случайному стату
+        cur.execute(f"""
+            UPDATE {SCHEMA}.characters
+            SET max_hp = max_hp + 5,
+                hp = LEAST(hp + 10, max_hp + 5),
+                stat_strength    = stat_strength    + CASE WHEN RANDOM() < 0.25 THEN 1 ELSE 0 END,
+                stat_agility     = stat_agility     + CASE WHEN RANDOM() < 0.25 THEN 1 ELSE 0 END,
+                stat_intelligence = stat_intelligence + CASE WHEN RANDOM() < 0.25 THEN 1 ELSE 0 END,
+                stat_defense     = stat_defense     + CASE WHEN RANDOM() < 0.25 THEN 1 ELSE 0 END,
+                stat_luck        = stat_luck        + CASE WHEN RANDOM() < 0.25 THEN 1 ELSE 0 END
+            WHERE id = %s
+        """, (char_id,))
+
+    cur.execute(f"""
+        UPDATE {SCHEMA}.characters
+        SET xp=%s, xp_to_next=%s, level=%s, coins=%s
+        WHERE id=%s
+    """, (new_xp, xp_to_next, new_level, new_coins, char_id))
+
+    return {
+        "xp_gained": xp_gain,
+        "coins_gained": coins_gain,
+        "new_xp": new_xp,
+        "xp_to_next": xp_to_next,
+        "new_level": new_level,
+        "leveled_up": leveled_up,
+        "new_coins": new_coins,
+    }
+
+
 def handler(event: dict, context) -> dict:
-    """Квесты и диалоги NPC."""
+    """Квесты, уроки, данжи — прогресс и XP."""
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": cors_headers(), "body": ""}
 
@@ -242,5 +293,123 @@ def handler(event: dict, context) -> dict:
         conn.close()
 
         return json_response({"ok": True, "action": action, "reward": reward_given})
+
+    # lesson_complete — завершение урока с начислением XP
+    if action == "lesson_complete":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        lesson_id = body.get("lesson_id", "")
+        xp_reward  = int(body.get("xp", 100))
+        coins_reward = int(body.get("coins", 20))
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+
+        # lesson_id хранится как integer — пробуем привести, иначе используем как есть
+        try:
+            lesson_id_int = int(lesson_id)
+        except (ValueError, TypeError):
+            lesson_id_int = 0
+
+        # Проверяем: не проходил ли уже этот урок
+        cur.execute(
+            f"SELECT id, completed FROM {SCHEMA}.lesson_progress "
+            f"WHERE character_id=%s AND lesson_id=%s",
+            (char_id, lesson_id_int)
+        )
+        existing_lesson = cur.fetchone()
+        already_done = existing_lesson and existing_lesson[1]
+
+        result = {"already_completed": bool(already_done)}
+
+        if already_done:
+            # Уже завершён — только обновляем attempts
+            cur.execute(
+                f"UPDATE {SCHEMA}.lesson_progress SET attempts=attempts+1 "
+                f"WHERE character_id=%s AND lesson_id=%s",
+                (char_id, lesson_id_int)
+            )
+        else:
+            if existing_lesson:
+                cur.execute(
+                    f"UPDATE {SCHEMA}.lesson_progress "
+                    f"SET completed=true, xp_earned=%s, attempts=attempts+1, completed_at=NOW() "
+                    f"WHERE character_id=%s AND lesson_id=%s",
+                    (xp_reward, char_id, lesson_id_int)
+                )
+            else:
+                cur.execute(
+                    f"INSERT INTO {SCHEMA}.lesson_progress "
+                    f"(character_id, lesson_id, completed, xp_earned, attempts, completed_at) "
+                    f"VALUES (%s, %s, true, %s, 1, NOW())",
+                    (char_id, lesson_id_int, xp_reward)
+                )
+            result.update(award_xp(cur, char_id, xp_reward, coins_reward))
+
+        conn.commit()
+        conn.close()
+        return json_response({**result, "ok": True})
+
+    # dungeon_complete — завершение данжа
+    if action == "dungeon_complete":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        dungeon_id    = body.get("dungeon_id", "")
+        score_pct     = int(body.get("score_pct", 0))    # % правильных ответов
+        xp_reward     = int(body.get("xp", 200))
+        coins_reward  = int(body.get("coins", 100))
+
+        # Масштабируем награду по результату
+        xp_reward    = int(xp_reward    * (score_pct / 100))
+        coins_reward = int(coins_reward * (score_pct / 100))
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+
+        # Сохраняем результат (всегда, даже повторные — храним лучший)
+        cur.execute(
+            f"SELECT id, best_score FROM {SCHEMA}.dungeon_progress "
+            f"WHERE character_id=%s AND dungeon_id=%s",
+            (char_id, dungeon_id)
+        )
+        existing = cur.fetchone()
+        is_new_best = not existing or score_pct > existing[1]
+
+        if existing:
+            cur.execute(
+                f"UPDATE {SCHEMA}.dungeon_progress "
+                f"SET attempts=attempts+1, best_score=GREATEST(best_score,%s), last_completed_at=NOW() "
+                f"WHERE id=%s",
+                (score_pct, existing[0])
+            )
+        else:
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.dungeon_progress (character_id, dungeon_id, best_score, attempts, last_completed_at) "
+                f"VALUES (%s,%s,%s,1,NOW())",
+                (char_id, dungeon_id, score_pct)
+            )
+
+        # XP только за первое прохождение или новый рекорд
+        award_result = {}
+        if xp_reward > 0:
+            award_result = award_xp(cur, char_id, xp_reward, coins_reward)
+
+        conn.commit()
+        conn.close()
+        return json_response({**award_result, "ok": True, "is_new_best": is_new_best, "score_pct": score_pct})
 
     return json_response({"error": "Not found"}, 404)

@@ -40,6 +40,17 @@ export interface InventoryItem {
   source: string;
 }
 
+export interface XpResult {
+  xp_gained: number;
+  coins_gained: number;
+  new_xp: number;
+  xp_to_next: number;
+  new_level: number;
+  leveled_up: boolean;
+  new_coins: number;
+  already_completed?: boolean;
+}
+
 interface GameState {
   token: string | null;
   username: string | null;
@@ -54,6 +65,8 @@ interface GameState {
   refreshCharacter: () => Promise<void>;
   refreshInventory: () => Promise<void>;
   setCharacter: (c: Character) => void;
+  /** Быстрое обновление XP/level/coins в контексте без повторного запроса к серверу */
+  applyXpResult: (result: XpResult) => void;
 }
 
 const GameContext = createContext<GameState | null>(null);
@@ -126,10 +139,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setInventory([]);
   }
 
+  /** Применяет результат XP/level от бэкенда прямо в state — без лишнего round-trip */
+  function applyXpResult(result: XpResult) {
+    setCharacter(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        xp: result.new_xp,
+        xp_to_next: result.xp_to_next,
+        level: result.new_level,
+        coins: result.new_coins,
+      };
+    });
+  }
+
   return (
     <GameContext.Provider value={{
       token, username, character, inventory, loading, authLoading,
       login, register, logout, refreshCharacter, refreshInventory, setCharacter,
+      applyXpResult,
     }}>
       {children}
     </GameContext.Provider>

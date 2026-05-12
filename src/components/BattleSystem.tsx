@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import Icon from '@/components/ui/icon';
-import { useGame } from '@/lib/GameContext';
+import { useGame, XpResult } from '@/lib/GameContext';
+import { api } from '@/lib/api';
+import { pushNotif } from '@/components/Notifications';
 
 // GDD Enemies
 const ENEMIES = [
@@ -85,8 +87,16 @@ const LOG_COLORS: Record<string, string> = {
 
 const TIMER_MAX = 12;
 
+// ID врагов совпадают с бэкендом
+const ENEMY_BACKEND_IDS: Record<number, string> = {
+  1: 'corp_drone',
+  2: 'neuro_guard',
+  3: 'ai_corporant',
+  4: 'zero_corp_boss',
+};
+
 export default function BattleSystem() {
-  const { character } = useGame();
+  const { character, applyXpResult } = useGame();
   const playerClass = character?.class || 'hacker';
   const theme = CLASS_THEME[playerClass] || CLASS_THEME.hacker;
   const abilities = CLASS_ABILITIES[playerClass] || CLASS_ABILITIES.hacker;
@@ -107,6 +117,8 @@ export default function BattleSystem() {
   const [timeLeft, setTimeLeft] = useState(TIMER_MAX);
   const [revealedKeyword, setRevealedKeyword] = useState<string | null>(null);
   const [floatDamage, setFloatDamage] = useState<{ value: number; type: 'enemy' | 'player' } | null>(null);
+  const [winReward, setWinReward] = useState<XpResult | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const logRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -174,8 +186,9 @@ export default function BattleSystem() {
 
   const startBattle = () => {
     setBattleState('fighting');
-    setPlayerHp(200);
+    setPlayerHp(character?.hp ?? 200);
     setEnemyHp(selectedEnemy.maxHp);
+    setWinReward(null);
     setBattleLog([{ text: `⚡ БОЙ НАЧАТ // ${selectedEnemy.name} [${selectedEnemy.faction}] LVL ${selectedEnemy.level}`, type: 'system' }]);
     setCode('');
     setRevealedKeyword(null);
@@ -184,6 +197,24 @@ export default function BattleSystem() {
     setDefenseHits(0);
     setAbilityCooldowns({});
   };
+
+  // Сохранить победу на бэкенде и получить реальный XP
+  const saveBattleWin = useCallback(async (currentEnemyHp: number) => {
+    setSaving(true);
+    const backendId = ENEMY_BACKEND_IDS[selectedEnemy.id] || 'corp_drone';
+    const result = await api.battle.attack(backendId, true, currentEnemyHp);
+    setSaving(false);
+    if (result && !result.error) {
+      applyXpResult(result as XpResult);
+      setWinReward(result as XpResult);
+      if (result.leveled_up) {
+        pushNotif({ type: 'level', title: `LEVEL UP! → ${result.new_level}`, body: 'Статы персонажа увеличены!', icon: '⚡', color: '#00ff41' });
+      }
+      if (result.dropped_item) {
+        pushNotif({ type: 'item', title: `Дроп: ${result.dropped_item.name}`, body: `${result.dropped_item.rarity} предмет добавлен в инвентарь`, icon: '💎', color: '#aa00ff' });
+      }
+    }
+  }, [selectedEnemy, applyXpResult]);
 
   const submitCode = () => {
     if (!code.trim() || battleState !== 'fighting') return;
@@ -207,7 +238,12 @@ export default function BattleSystem() {
       triggerShake('enemy');
       addLog(`✅ КОД ПРИНЯТ → ${damage} урона ${pendingMultiplier > 1 ? `(×${pendingMultiplier.toFixed(1)})` : ''}`, 'success');
       addLog(`🔴 HP ${selectedEnemy.name}: ${newEnemyHp}/${selectedEnemy.maxHp}`, 'info');
-      if (newEnemyHp <= 0) { setBattleState('win'); addLog(`🏆 ПОБЕДА // Получено: ${selectedEnemy.reward}`, 'win'); return; }
+      if (newEnemyHp <= 0) {
+        setBattleState('win');
+        addLog(`🏆 ПОБЕДА // ${selectedEnemy.name} повержен!`, 'win');
+        saveBattleWin(0);
+        return;
+      }
     } else {
       const dmgReduction = defenseActive && defenseHits > 0 ? 0.65 : 1;
       const base = Math.floor(Math.random() * 20) + 25;
@@ -474,18 +510,45 @@ export default function BattleSystem() {
               </button>
             )}
             {(battleState === 'win' || battleState === 'lose') && (
-              <div className="text-center py-4">
-                <div className="font-orbitron text-3xl font-black mb-2 glitch-text"
-                  style={{ color: battleState === 'win' ? theme.primary : '#ff2040' }}>
+              <div className="text-center py-3">
+                <div className="font-orbitron text-3xl font-black mb-3"
+                  style={{ color: battleState === 'win' ? theme.primary : '#ff2040', textShadow: `0 0 20px ${battleState === 'win' ? theme.primary : '#ff2040'}60` }}>
                   {battleState === 'win' ? '// VICTORY' : '// DEFEATED'}
                 </div>
+
+                {/* Реальные награды с бэкенда */}
                 {battleState === 'win' && (
-                  <div className="font-mono text-sm text-gray-400 mb-3">{selectedEnemy.reward}</div>
+                  <div className="mb-3 space-y-1.5">
+                    {saving ? (
+                      <div className="flex items-center justify-center gap-2 font-mono text-xs text-gray-500">
+                        <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                        Сохраняем результат...
+                      </div>
+                    ) : winReward ? (
+                      <div className="border border-white/10 bg-black/40 p-3 space-y-1">
+                        <div className="flex justify-center gap-6 font-orbitron text-sm">
+                          <span style={{ color: theme.primary }}>+{winReward.xp_gained} XP</span>
+                          <span className="text-yellow-400">+{winReward.coins_gained} Creds</span>
+                        </div>
+                        {winReward.leveled_up && (
+                          <div className="font-orbitron text-cyber-yellow animate-pulse text-center">
+                            ⚡ LEVEL UP! → {winReward.new_level}
+                          </div>
+                        )}
+                        <div className="font-mono text-[10px] text-gray-600 text-center">
+                          XP: {winReward.new_xp}/{winReward.xp_to_next}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="font-mono text-xs text-gray-600">{selectedEnemy.reward}</div>
+                    )}
+                  </div>
                 )}
+
                 <button onClick={startBattle}
                   className="font-orbitron text-xs px-6 py-2 border transition-all"
                   style={{ borderColor: theme.primary, color: theme.primary }}>
-                  ПОПРОБОВАТЬ ЕЩЁ
+                  {battleState === 'win' ? 'СЛЕДУЮЩИЙ ВРАГ' : 'ПОПРОБОВАТЬ ЕЩЁ'}
                 </button>
               </div>
             )}

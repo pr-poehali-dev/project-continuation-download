@@ -16,6 +16,7 @@ import NotificationCenter, { ToastContainer } from '@/components/Notifications';
 import Crafting from '@/components/Crafting';
 import Achievements from '@/components/Achievements';
 import NpcDialog from '@/components/NpcDialog';
+import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import { useGame } from '@/lib/GameContext';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
@@ -27,6 +28,7 @@ export default function Index() {
   const [visible, setVisible] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appView, setAppView] = useState<AppView>('landing');
+  const { show: showOnboarding, setShow: setShowOnboarding } = useOnboarding();
 
   const navigate = (section: string) => {
     setVisible(false);
@@ -114,6 +116,12 @@ export default function Index() {
         {activeSection === 'npc' && <NpcDialog />}
       </main>
       <ToastContainer />
+      {showOnboarding && (
+        <Onboarding
+          onNavigate={section => { navigate(section); }}
+          onClose={() => setShowOnboarding(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
+import { useGame, XpResult } from '@/lib/GameContext';
+import { api } from '@/lib/api';
+import { pushNotif } from '@/components/Notifications';
 
 // ─── Данные подземелий ───────────────────────────────────────────────────────
 
@@ -241,13 +244,30 @@ interface RoomState {
   log: { q: string; correct: boolean; explanation: string }[];
 }
 
+// XP по данжу
+const DUNGEON_XP: Record<string, number> = {
+  nexus_alpha:   200,
+  nexus_beta:    500,
+  archive_vault: 1200,
+  nexus_prime:   3000,
+};
+const DUNGEON_COINS: Record<string, number> = {
+  nexus_alpha:   150,
+  nexus_beta:    350,
+  archive_vault: 800,
+  nexus_prime:   2000,
+};
+
 export default function Dungeon() {
+  const { applyXpResult } = useGame();
   const [phase, setPhase] = useState<Phase>('select');
   const [dungeon, setDungeon] = useState<DungeonDef | null>(null);
   const [room, setRoom] = useState<RoomState>({
     questionIdx: 0, answered: null, correct: 0, wrong: 0, streak: 0, log: [],
   });
   const [showExplanation, setShowExplanation] = useState(false);
+  const [dungeonReward, setDungeonReward] = useState<{ xp: number; levelUp: boolean; newLevel: number } | null>(null);
+  const [savingResult, setSavingResult] = useState(false);
 
   const startDungeon = (d: DungeonDef) => {
     setDungeon(d);
@@ -270,20 +290,40 @@ export default function Dungeon() {
     setShowExplanation(true);
   };
 
+  const saveDungeonResult = async (dungeonId: string, correctCount: number, totalCount: number) => {
+    if (!totalCount) return;
+    setSavingResult(true);
+    const scorePct = Math.round((correctCount / totalCount) * 100);
+    const xp = DUNGEON_XP[dungeonId] ?? 200;
+    const coins = DUNGEON_COINS[dungeonId] ?? 100;
+    const res = await api.dungeon.complete(dungeonId, scorePct, xp, coins);
+    setSavingResult(false);
+    if (res && !res.error && res.xp_gained > 0) {
+      applyXpResult(res as XpResult);
+      setDungeonReward({ xp: res.xp_gained, levelUp: res.leveled_up ?? false, newLevel: res.new_level ?? 1 });
+      if (res.leveled_up) {
+        pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: 'Статы персонажа улучшены', icon: '⚡', color: '#00ff41' });
+      }
+    }
+  };
+
   const next = () => {
     if (!dungeon) return;
     const nextIdx = room.questionIdx + 1;
     if (nextIdx >= dungeon.questions.length) {
-      // Add final log entry and finish
-      setRoom(r => ({
-        ...r,
-        log: [...r.log, {
-          q: dungeon.questions[r.questionIdx].q,
-          correct: r.answered === dungeon.questions[r.questionIdx].correct,
-          explanation: dungeon.questions[r.questionIdx].explanation,
+      const finalRoom = {
+        ...room,
+        log: [...room.log, {
+          q: dungeon.questions[room.questionIdx].q,
+          correct: room.answered === dungeon.questions[room.questionIdx].correct,
+          explanation: dungeon.questions[room.questionIdx].explanation,
         }],
-      }));
+      };
+      const finalCorrect = finalRoom.correct + (room.answered === dungeon.questions[room.questionIdx].correct ? 1 : 0);
+      setRoom(finalRoom);
+      setDungeonReward(null);
       setPhase('result');
+      saveDungeonResult(dungeon.id, finalCorrect, dungeon.questions.length);
     } else {
       setRoom(r => ({
         ...r,
@@ -511,11 +551,29 @@ export default function Dungeon() {
             ))}
           </div>
 
-          {/* Reward */}
+          {/* Reward — реальные данные с бэкенда */}
           {isPass && (
             <div className="border border-cyber-yellow/40 bg-cyber-yellow/5 p-4 mb-6 text-center">
               <div className="font-mono text-[10px] text-gray-600 mb-1">// НАГРАДА</div>
-              <div className="font-orbitron text-sm text-cyber-yellow">{dungeon.reward}</div>
+              {savingResult ? (
+                <div className="flex items-center justify-center gap-2 font-mono text-xs text-gray-500">
+                  <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                  Сохраняем результат...
+                </div>
+              ) : dungeonReward ? (
+                <div className="space-y-1">
+                  <div className="font-orbitron text-lg text-cyber-yellow">
+                    +{dungeonReward.xp} XP
+                  </div>
+                  {dungeonReward.levelUp && (
+                    <div className="font-orbitron text-cyber-green animate-pulse">
+                      ⚡ LEVEL UP → LVL {dungeonReward.newLevel}!
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="font-orbitron text-sm text-cyber-yellow">{dungeon.reward}</div>
+              )}
             </div>
           )}
 

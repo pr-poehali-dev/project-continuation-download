@@ -1,6 +1,10 @@
 import { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import Icon from '@/components/ui/icon';
+import { useGame, XpResult } from '@/lib/GameContext';
+import { api } from '@/lib/api';
+import { usePyodide } from '@/lib/usePyodide';
+import { pushNotif } from '@/components/Notifications';
 
 // ─── ТЕОРИЯ ──────────────────────────────────────────────────────────────────
 
@@ -459,8 +463,10 @@ type OutputLine = { text: string; type: 'cmd' | 'ok' | 'err' | 'info' | 'dim' };
 type RunState = 'idle' | 'running' | 'success' | 'error';
 
 export default function LessonsSection() {
-  const [tab, setTab] = useState<Tab>('theory');
+  const { applyXpResult } = useGame();
+  const { runCode: pyRun, loading: pyLoading } = usePyodide();
 
+  const [tab, setTab] = useState<Tab>('theory');
   const [selectedTheory, setSelectedTheory] = useState<Theory>(THEORY_LIBRARY[0]);
   const [theoryFilter, setTheoryFilter] = useState('Все');
 
@@ -469,7 +475,9 @@ export default function LessonsSection() {
   const [outputLines, setOutputLines] = useState<OutputLine[]>([]);
   const [runState, setRunState] = useState<RunState>('idle');
   const [completedInSession, setCompletedInSession] = useState<number[]>([]);
+  const [xpResult, setXpResult] = useState<{ xp: number; levelUp: boolean; newLevel: number } | null>(null);
   const [showHint, setShowHint] = useState(false);
+  const [realExec, setRealExec] = useState(false); // true = Pyodide
 
   const outputRef = useRef<HTMLDivElement>(null);
   const lesson = LESSONS.find(l => l.id === activeId)!;
@@ -481,9 +489,10 @@ export default function LessonsSection() {
     setOutputLines([]);
     setRunState('idle');
     setShowHint(false);
+    setXpResult(null);
   };
 
-  const checkCode = (src: string, kws: string[]) => {
+  const checkKeywords = (src: string, kws: string[]) => {
     const lower = src.toLowerCase();
     const missing = kws.filter(k => !lower.includes(k.toLowerCase()));
     return { pass: missing.length <= Math.floor(kws.length * 0.3), missing };
@@ -494,29 +503,77 @@ export default function LessonsSection() {
       setTimeout(() => {
         setOutputLines(prev => [...prev, line]);
         if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
-      }, i * 100);
+      }, i * 80);
     });
   };
 
-  const runCode = () => {
+  const handleSaveComplete = async (lessonId: number, xp: number) => {
+    const res = await api.lesson.complete(lessonId, xp, Math.floor(xp * 0.2));
+    if (res && !res.error) {
+      if (!res.already_completed) {
+        applyXpResult(res as XpResult);
+        setXpResult({ xp: res.xp_gained ?? xp, levelUp: res.leveled_up ?? false, newLevel: res.new_level ?? 1 });
+        if (res.leveled_up) {
+          pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: '+5 HP, статы улучшены', icon: '⚡', color: '#00ff41' });
+        }
+      } else {
+        setXpResult({ xp: 0, levelUp: false, newLevel: 0 });
+      }
+    }
+  };
+
+  const runCode = async () => {
     if (!lesson || !code.trim() || runState === 'running') return;
     setRunState('running');
     setOutputLines([]);
-    setTimeout(() => {
-      const { pass, missing } = checkCode(code, lesson.task.keywords);
-      const lines: OutputLine[] = [{ text: `$ python mission_${String(lesson.id).padStart(2, '0')}.py`, type: 'cmd' }];
-      if (pass) {
-        lesson.task.output.split('\n').forEach(l => lines.push({ text: l, type: l.startsWith('[OK]') ? 'ok' : 'info' }));
-        lines.push({ text: `[+${lesson.xp} XP] Миссия выполнена`, type: 'ok' });
-        setRunState('success');
-        if (!completedInSession.includes(lesson.id)) setCompletedInSession(prev => [...prev, lesson.id]);
+    setXpResult(null);
+
+    streamLines([{ text: `$ python mission_${String(lesson.id).padStart(2, '0')}.py`, type: 'cmd' }]);
+
+    if (realExec) {
+      // Реальный Python через Pyodide
+      const { output, error, success } = await pyRun(code);
+      const lines: OutputLine[] = [];
+      if (success) {
+        output.split('\n').filter(Boolean).forEach(l => lines.push({ text: l, type: 'info' }));
+        const { pass, missing } = checkKeywords(code, lesson.task.keywords);
+        if (pass) {
+          lines.push({ text: '[OK] Миссия выполнена!', type: 'ok' });
+          setRunState('success');
+          if (!completedInSession.includes(lesson.id)) {
+            setCompletedInSession(prev => [...prev, lesson.id]);
+            handleSaveComplete(lesson.id, lesson.xp);
+          }
+        } else {
+          lines.push({ text: `[WARN] Код работает, но задача не решена`, type: 'dim' });
+          lines.push({ text: `Не использовано: ${missing.slice(0, 3).join(', ')}`, type: 'dim' });
+          setRunState('error');
+        }
       } else {
-        lines.push({ text: `[ERROR] Не найдено: ${missing.slice(0, 4).join(', ')}`, type: 'err' });
-        lines.push({ text: 'Подсказка: нажми ПРИМЕР', type: 'dim' });
+        lines.push({ text: `[ERROR] ${error}`, type: 'err' });
         setRunState('error');
       }
       streamLines(lines);
-    }, 400);
+    } else {
+      // Быстрая проверка ключевых слов
+      setTimeout(async () => {
+        const { pass, missing } = checkKeywords(code, lesson.task.keywords);
+        const lines: OutputLine[] = [];
+        if (pass) {
+          lesson.task.output.split('\n').forEach(l => lines.push({ text: l, type: l.startsWith('[OK]') ? 'ok' : 'info' }));
+          setRunState('success');
+          if (!completedInSession.includes(lesson.id)) {
+            setCompletedInSession(prev => [...prev, lesson.id]);
+            await handleSaveComplete(lesson.id, lesson.xp);
+          }
+        } else {
+          lines.push({ text: `[ERROR] Не найдено: ${missing.slice(0, 4).join(', ')}`, type: 'err' });
+          lines.push({ text: 'Нажми ПРИМЕР чтобы увидеть решение', type: 'dim' });
+          setRunState('error');
+        }
+        streamLines(lines);
+      }, 350);
+    }
   };
 
   const completedCount = LESSONS.filter(l => l.completed || completedInSession.includes(l.id)).length;
@@ -756,13 +813,45 @@ export default function LessonsSection() {
                 />
               </div>
 
-              <button onClick={runCode} disabled={runState === 'running'}
-                className="w-full py-3 font-orbitron text-sm border transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ borderColor: ACT_META[lesson.act].color, color: ACT_META[lesson.act].color, backgroundColor: ACT_META[lesson.act].color + '15' }}>
-                {runState === 'running'
-                  ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />КОМПИЛЯЦИЯ...</>
-                  : <><Icon name="Play" size={14} />ЗАПУСТИТЬ КОД</>}
-              </button>
+              {/* Toggle: реальный Python vs проверка ключевых слов */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={runCode}
+                  disabled={runState === 'running' || (realExec && pyLoading)}
+                  className="flex-1 py-3 font-orbitron text-sm border transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ borderColor: ACT_META[lesson.act].color, color: ACT_META[lesson.act].color, backgroundColor: ACT_META[lesson.act].color + '15' }}>
+                  {(runState === 'running' || (realExec && pyLoading))
+                    ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />{pyLoading ? 'ЗАГРУЗКА PYTHON...' : 'ВЫПОЛНЕНИЕ...'}</>
+                    : <><Icon name="Play" size={14} />ЗАПУСТИТЬ КОД</>}
+                </button>
+                <button
+                  onClick={() => setRealExec(v => !v)}
+                  className="ml-2 px-3 py-3 border font-mono text-[10px] transition-all"
+                  style={{
+                    borderColor: realExec ? '#00ffff' : '#333',
+                    color: realExec ? '#00ffff' : '#555',
+                    backgroundColor: realExec ? '#00ffff10' : 'transparent',
+                  }}
+                  title={realExec ? 'Реальное выполнение Python (Pyodide)' : 'Проверка ключевых слов'}>
+                  {realExec ? '🐍 REAL' : '🔑 KEYS'}
+                </button>
+              </div>
+
+              {/* XP результат */}
+              {xpResult && runState === 'success' && (
+                <div className="border border-cyber-green/40 bg-cyber-green/5 p-3 text-center animate-fade-in-up">
+                  {xpResult.xp > 0 ? (
+                    <div className="space-y-0.5">
+                      <div className="font-orbitron text-sm text-cyber-green">+{xpResult.xp} XP сохранено!</div>
+                      {xpResult.levelUp && (
+                        <div className="font-orbitron text-cyber-yellow animate-pulse">⚡ LEVEL UP → LVL {xpResult.newLevel}!</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="font-mono text-[10px] text-gray-600">Урок уже засчитан ранее</div>
+                  )}
+                </div>
+              )}
 
               <div className="border border-white/8 bg-black/80">
                 <div className="flex items-center gap-2 px-3 py-1.5 border-b border-white/5">

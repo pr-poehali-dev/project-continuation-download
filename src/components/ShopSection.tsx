@@ -1,7 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { api } from '@/lib/api';
 import { useGame } from '@/lib/GameContext';
+import { pushNotif } from '@/components/Notifications';
+
+// Web Audio — глитч-звук при открытии лутбокса
+function playLootSound(rarity: string) {
+  try {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const frequencies = rarity === 'legendary' ? [220, 440, 880, 1760] :
+                        rarity === 'epic'       ? [220, 440, 660] :
+                        rarity === 'rare'       ? [330, 550] : [440];
+    frequencies.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.2);
+      osc.start(ctx.currentTime + i * 0.08);
+      osc.stop(ctx.currentTime + i * 0.08 + 0.25);
+    });
+  } catch { /* ignore: Safari/mobile может заблокировать */ }
+}
 
 const RARITY_COLORS: Record<string, string> = {
   common: '#aaaaaa', uncommon: '#00ff41', rare: '#00aaff', epic: '#aa00ff', legendary: '#ffaa00',
@@ -28,6 +51,8 @@ interface ShopItem {
   type: string; rarity: string; stat_bonus: Record<string, number>; price: number;
 }
 
+type LootPhase = 'idle' | 'shaking' | 'opening' | 'reveal';
+
 export default function ShopSection() {
   const { character, refreshCharacter, refreshInventory } = useGame();
   const [items, setItems] = useState<ShopItem[]>([]);
@@ -36,7 +61,10 @@ export default function ShopSection() {
   const [lootLoading, setLootLoading] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' | 'drop' } | null>(null);
   const [droppedItem, setDroppedItem] = useState<ShopItem | null>(null);
+  const [lootPhase, setLootPhase] = useState<LootPhase>('idle');
+  const [openingBox, setOpeningBox] = useState<typeof LOOTBOXES[number] | null>(null);
   const [filter, setFilter] = useState('all');
+  const lootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.shop.items().then(d => {
@@ -66,16 +94,53 @@ export default function ShopSection() {
   const openLootbox = async (type: typeof LOOTBOXES[number]['type']) => {
     const box = LOOTBOXES.find(b => b.type === type)!;
     if (!character || character.coins < box.price) {
-      showMsg('Недостаточно монет!', 'error');
+      showMsg('Недостаточно Creds!', 'error');
       return;
     }
+    if (lootPhase !== 'idle') return;
+
+    setOpeningBox(box);
+    setLootPhase('shaking');
     setLootLoading(type);
+    setDroppedItem(null);
+
+    // Фаза 1: трясётся (600ms)
+    await new Promise(r => setTimeout(r, 600));
+    setLootPhase('opening');
+
+    // Запрос к API
     const data = await api.shop.lootbox(type);
     setLootLoading(null);
-    if (data.error) { showMsg(data.error, 'error'); return; }
+
+    if (data.error) {
+      showMsg(data.error, 'error');
+      setLootPhase('idle');
+      setOpeningBox(null);
+      return;
+    }
+
+    // Фаза 2: открывается (400ms)
+    await new Promise(r => setTimeout(r, 400));
+    setLootPhase('reveal');
     setDroppedItem(data.item);
+    playLootSound(data.item.rarity);
+
     await Promise.all([refreshCharacter(), refreshInventory()]);
-    setMsg({ text: `🎁 ДРОП: ${data.item.name}!`, type: 'drop' });
+
+    // Toast уведомление
+    pushNotif({
+      type: 'item',
+      title: `Дроп: ${data.item.name}`,
+      body: `${RARITY_LABELS[data.item.rarity] ?? data.item.rarity} · получено из ${box.name}`,
+      icon: box.emoji,
+      color: RARITY_COLORS[data.item.rarity] ?? '#aaa',
+    });
+
+    // Сбрасываем через 4 секунды
+    setTimeout(() => {
+      setLootPhase('idle');
+      setOpeningBox(null);
+    }, 4000);
   };
 
   const filteredItems = filter === 'all' ? items : items.filter(i => i.type === filter);
@@ -115,6 +180,65 @@ export default function ShopSection() {
             }`}
           >
             {msg.text}
+          </div>
+        )}
+
+        {/* ── LOOT OPENING OVERLAY ── */}
+        {lootPhase !== 'idle' && openingBox && (
+          <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center backdrop-blur-sm" ref={lootRef}>
+            <div className="text-center relative">
+              {/* Glitch background rings */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {[1,2,3].map(i => (
+                  <div key={i} className="absolute rounded-full border animate-ping"
+                    style={{
+                      width: `${i * 80}px`, height: `${i * 80}px`,
+                      borderColor: openingBox.color + '40',
+                      animationDelay: `${i * 0.15}s`,
+                      animationDuration: '1s',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Box emoji */}
+              <div
+                className="text-8xl mb-6 relative z-10 transition-all duration-300"
+                style={{
+                  animation: lootPhase === 'shaking' ? 'shake 0.1s infinite' :
+                             lootPhase === 'opening' ? 'pulse 0.3s ease' : 'none',
+                  filter: lootPhase !== 'idle' ? `drop-shadow(0 0 30px ${openingBox.color})` : 'none',
+                }}
+              >
+                {lootPhase === 'reveal' && droppedItem ? '🎁' : openingBox.emoji}
+              </div>
+
+              {lootPhase === 'reveal' && droppedItem ? (
+                <div className="animate-fade-in-up">
+                  <div className="font-mono text-[10px] mb-2" style={{ color: openingBox.color }}>
+                    // ПРЕДМЕТ ПОЛУЧЕН
+                  </div>
+                  <div className="font-orbitron text-3xl font-black mb-2"
+                    style={{ color: RARITY_COLORS[droppedItem.rarity] ?? '#aaa', textShadow: `0 0 30px ${RARITY_COLORS[droppedItem.rarity] ?? '#aaa'}` }}>
+                    {droppedItem.name}
+                  </div>
+                  <div className="font-mono text-sm mb-4" style={{ color: RARITY_COLORS[droppedItem.rarity] ?? '#aaa' }}>
+                    {RARITY_LABELS[droppedItem.rarity] ?? droppedItem.rarity} · {SLOT_LABELS[droppedItem.type] ?? droppedItem.type}
+                  </div>
+                  <div className="font-mono text-[10px] text-gray-600">Закрывается автоматически...</div>
+                </div>
+              ) : (
+                <div>
+                  <div className="font-orbitron text-xl mb-2" style={{ color: openingBox.color }}>
+                    {lootPhase === 'shaking' ? 'ВСКРЫВАЮ...' : 'ОТКРЫВАЕТСЯ...'}
+                  </div>
+                  <div className="flex items-center justify-center gap-2 font-mono text-xs text-gray-500">
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" style={{ borderColor: openingBox.color }} />
+                    {openingBox.name}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

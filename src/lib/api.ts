@@ -60,7 +60,21 @@ export const api = {
 
   quest: {
     current: () => call(URLS.quest, { action: "current" }),
-    advance: (next_step: number, action?: string) =>
-      call(URLS.quest, { action: "advance", next_step, ...(action ? { action_name: action } : {}) }),
+    advance: (next_step: number, questAction?: string) =>
+      call(URLS.quest, { action: "advance", next_step, ...(questAction ? { action_name: questAction } : {}) }),
+  },
+
+  // Прогресс уроков: сохранить завершение + получить XP
+  lesson: {
+    complete: (lesson_id: number, xp: number, coins: number) =>
+      call(URLS.quest, { action: "lesson_complete", lesson_id, xp, coins }),
+    // Получить список пройденных уроков (опционально)
+    list: () => call(URLS.quest, { action: "lesson_list" }),
+  },
+
+  // Прогресс данжей: сохранить результат + получить XP
+  dungeon: {
+    complete: (dungeon_id: string, score_pct: number, xp: number, coins: number) =>
+      call(URLS.quest, { action: "dungeon_complete", dungeon_id, score_pct, xp, coins }),
   },
 };
