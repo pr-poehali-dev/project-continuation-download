@@ -382,8 +382,8 @@ export default function AdminPanel() {
                   <div className="border border-white/8 p-5">
                     <div className="font-mono text-[10px] text-gray-600 mb-4 tracking-widest">// КЛАССЫ ПЕРСОНАЖЕЙ</div>
                     <div className="space-y-2">
-                      {stats.class_distribution.map(c => {
-                        const total = stats.class_distribution.reduce((a, b) => a + b.count, 0);
+                      {(stats.class_distribution || []).map(c => {
+                        const total = (stats.class_distribution || []).reduce((a, b) => a + b.count, 0);
                         const pct = total ? Math.round((c.count / total) * 100) : 0;
                         const col = CLASS_COLOR[c.class] || '#aaa';
                         return (
@@ -401,12 +401,12 @@ export default function AdminPanel() {
                 </div>
 
                 {/* Reg chart */}
-                {stats.registrations_7d.length > 0 && (
+                {(stats.registrations_7d || []).length > 0 && (
                   <div className="border border-white/8 p-5">
                     <div className="font-mono text-[10px] text-gray-600 mb-4 tracking-widest">// РЕГИСТРАЦИИ ЗА 7 ДНЕЙ</div>
                     <div className="flex items-end gap-2 h-24">
-                      {stats.registrations_7d.map(r => {
-                        const maxVal = Math.max(...stats.registrations_7d.map(x => x.count), 1);
+                      {(stats.registrations_7d || []).map(r => {
+                        const maxVal = Math.max(...(stats.registrations_7d || []).map(x => x.count), 1);
                         const h = Math.max(4, Math.round((r.count / maxVal) * 96));
                         return (
                           <div key={r.date} className="flex-1 flex flex-col items-center gap-1">
@@ -588,7 +588,7 @@ export default function AdminPanel() {
                       )}
 
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {Object.entries(item.stat_bonus).filter(([,v]) => v).map(([k,v]) => (
+                        {Object.entries(item.stat_bonus || {}).filter(([,v]) => v).map(([k,v]) => (
                           <span key={k} className="font-mono text-[9px] text-gray-500">+{v} {k}</span>
                         ))}
                       </div>

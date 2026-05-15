@@ -68,7 +68,7 @@ export default function CharacterProfile() {
   const hpPct     = Math.round((character.hp / character.max_hp) * 100);
 
   // Лучшая редкость надетого
-  const equippedItems = Object.values(character.equipment).filter(Boolean);
+  const equippedItems = Object.values(character.equipment || {}).filter(Boolean);
   const rarityOrder   = ['legendary','epic','rare','uncommon','common'];
   const bestRarity    = rarityOrder.find(r => equippedItems.some(e => e?.rarity === r));
   const glowColor     = bestRarity
@@ -235,7 +235,7 @@ export default function CharacterProfile() {
                 {/* 6 slots grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                   {SLOTS.map(slot => {
-                    const item = character.equipment[slot];
+                    const item = character.equipment?.[slot];
                     const meta = SLOT_META[slot];
                     const color = item ? RARITY_COLORS[item.rarity] : '#222';
                     const isUnequipping = unequipLoading === slot;
