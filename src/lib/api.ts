@@ -13,15 +13,20 @@ function getToken(): string {
 
 async function call(url: string, body: Record<string, unknown>) {
   const token = getToken();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { "X-Authorization": `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  return res.json();
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "X-Authorization": `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    return res.json();
+  } catch (e) {
+    console.error("Fetch error:", e, "for", url);
+    return { error: "network_error" };
+  }
 }
 
 // AUTH
@@ -91,7 +96,7 @@ function adminCall(secret: string, body: Record<string, unknown>) {
       ...(token ? { "X-Authorization": `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
-  }).then(r => r.json());
+  }).then(r => r.json()).catch(() => ({ error: "network_error" }));
 }
 
 function adminGet(secret: string, action: string, params: Record<string, string> = {}) {
@@ -102,7 +107,7 @@ function adminGet(secret: string, action: string, params: Record<string, string>
       "X-Admin-Secret": secret,
       ...(token ? { "X-Authorization": `Bearer ${token}` } : {}),
     },
-  }).then(r => r.json());
+  }).then(r => r.json()).catch(() => ({ error: "network_error" }));
 }
 
 export const adminApi = {

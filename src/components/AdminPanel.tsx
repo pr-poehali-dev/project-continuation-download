@@ -152,21 +152,25 @@ export default function AdminPanel() {
     setStatsLoading(true);
     const res = await adminApi.stats(secret);
     setStatsLoading(false);
-    if (!res.error) setStats(res);
+    if (!res.error) setStats({
+      ...res,
+      class_distribution: res.class_distribution || [],
+      registrations_7d: res.registrations_7d || [],
+    });
   }, [secret]);
 
   const loadPlayers = useCallback(async (search = '') => {
     setPlayersLoading(true);
     const res = await adminApi.players(secret, { search, limit: 50 });
     setPlayersLoading(false);
-    if (!res.error) { setPlayers(res.players); setPlayersTotal(res.total); }
+    if (!res.error) { setPlayers(res.players || []); setPlayersTotal(res.total || 0); }
   }, [secret]);
 
   const loadItems = useCallback(async () => {
     setItemsLoading(true);
     const res = await adminApi.items(secret);
     setItemsLoading(false);
-    if (!res.error) setItems(res.items);
+    if (!res.error) setItems(res.items || []);
   }, [secret]);
 
   useEffect(() => {
