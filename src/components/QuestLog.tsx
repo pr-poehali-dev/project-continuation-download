@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
-import { useGame } from '@/lib/GameContext';
+import { useGame, XpResult } from '@/lib/GameContext';
+import { api } from '@/lib/api';
+import { pushNotif } from '@/components/Notifications';
 import { useProgress } from '@/lib/useProgress';
 import { progress as progressStore } from '@/lib/progressStore';
 
@@ -386,10 +388,31 @@ function checkObjective(
 // ─── Компонент ────────────────────────────────────────────────────────────────
 
 export default function QuestLog({ onNavigate }: { onNavigate?: (s: string) => void }) {
-  const { character } = useGame();
+  const { character, applyXpResult } = useGame();
   const prog = useProgress();
   const [filter, setFilter] = useState<'all' | Quest['type']>('all');
   const [selected, setSelected] = useState<Quest | null>(QUESTS[0]);
+  const [claimedQuests, setClaimedQuests] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('claimed_quests') || '[]')); }
+    catch { return new Set(); }
+  });
+  const [claiming, setClaiming] = useState(false);
+
+  const claimReward = async (q: Quest) => {
+    if (claimedQuests.has(q.id) || claiming) return;
+    setClaiming(true);
+    const res = await api.questClaim(q.xp, Math.round(q.xp * 0.5));
+    setClaiming(false);
+    if (res && !res.error) {
+      applyXpResult(res as XpResult);
+      const newClaimed = new Set(claimedQuests).add(q.id);
+      setClaimedQuests(newClaimed);
+      localStorage.setItem('claimed_quests', JSON.stringify([...newClaimed]));
+      pushNotif({ type: 'quest', title: `Квест завершён: ${q.title}`, body: `+${q.xp} XP · +${Math.round(q.xp * 0.5)} Creds`, icon: '📜', color: '#00ff41' });
+      if (res.leveled_up)
+        pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: 'Статы улучшены!', icon: '⚡', color: '#00ff41' });
+    }
+  };
 
   const getObjDone = (q: Quest, idx: number): boolean => {
     const obj = q.objectives[idx];
@@ -612,12 +635,21 @@ export default function QuestLog({ onNavigate }: { onNavigate?: (s: string) => v
                 {getQuestProgress(selected).pct === 100 && (
                   <div className="mt-4 p-3 border border-cyber-green/40 bg-cyber-green/5 flex items-center justify-between">
                     <div>
-                      <div className="font-orbitron text-sm text-cyber-green">✓ ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ</div>
-                      <div className="font-mono text-[10px] text-gray-600 mt-0.5">Квест готов к завершению</div>
+                      <div className="font-orbitron text-sm text-cyber-green">
+                        {claimedQuests.has(selected.id) ? '✓ НАГРАДА ПОЛУЧЕНА' : '✓ ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ'}
+                      </div>
+                      <div className="font-mono text-[10px] text-gray-600 mt-0.5">
+                        {claimedQuests.has(selected.id) ? `+${selected.xp} XP зачислено` : 'Квест готов к завершению'}
+                      </div>
                     </div>
-                    <button className="font-orbitron text-xs px-4 py-2 border border-cyber-green text-cyber-green bg-cyber-green/10 hover:bg-cyber-green/20 transition-all">
-                      СДАТЬ
-                    </button>
+                    {!claimedQuests.has(selected.id) && (
+                      <button
+                        onClick={() => claimReward(selected)}
+                        disabled={claiming}
+                        className="font-orbitron text-xs px-4 py-2 border border-cyber-green text-cyber-green bg-cyber-green/10 hover:bg-cyber-green/20 transition-all disabled:opacity-50">
+                        {claiming ? '...' : 'СДАТЬ'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

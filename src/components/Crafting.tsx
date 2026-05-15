@@ -232,6 +232,7 @@ export default function Crafting() {
           </div>
           <h2 className="font-orbitron text-2xl text-white">
             КРАФТ <span className="text-cyber-magenta">ИМПЛАНТОВ</span>
+            <span className="ml-3 font-mono text-[10px] border border-yellow-500/40 text-yellow-500 px-2 py-0.5 align-middle">БЕТА</span>
           </h2>
           <p className="text-gray-600 font-mono text-xs mt-1">
             Создавай уникальное снаряжение из ресурсов, добытых в миссиях

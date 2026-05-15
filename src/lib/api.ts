@@ -83,6 +83,15 @@ export const api = {
     complete: (dungeon_id: string, score_pct: number, xp: number, coins: number) =>
       call(URLS.quest, { action: "dungeon_complete", dungeon_id, score_pct, xp, coins }),
   },
+
+  // Награды NPC и квестов
+  npcReward: (npc_id: string, xp: number, coins: number) =>
+    call(URLS.quest, { action: "npc_reward", npc_id, xp, coins }),
+
+  questClaim: (xp: number, coins: number) =>
+    call(URLS.quest, { action: "quest_claim", xp, coins }),
+
+  leaderboard: () => call(URLS.quest, { action: "leaderboard" }),
 };
 
 // ─── Admin API (отдельная функция с двойной аутентификацией) ─────────────────

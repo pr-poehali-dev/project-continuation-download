@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
-import { useGame } from '@/lib/GameContext';
+import { useGame, XpResult } from '@/lib/GameContext';
+import { api } from '@/lib/api';
 import { pushNotif } from './Notifications';
 import { progress } from '@/lib/progressStore';
 
@@ -280,10 +281,12 @@ interface DialogEngineProps {
 }
 
 function DialogEngine({ npc, onClose }: DialogEngineProps) {
+  const { applyXpResult } = useGame();
   const [nodeId, setNodeId] = useState('start');
   const [lineIdx, setLineIdx] = useState(0);
   const [finished, setFinished] = useState(false);
   const [rewards, setRewards] = useState<{ xp: number; creds: number; items: string[] }>({ xp: 0, creds: 0, items: [] });
+  const [rewardSent, setRewardSent] = useState(false);
 
   // Записываем NPC в прогресс при первом открытии диалога
   useEffect(() => {
@@ -300,20 +303,35 @@ function DialogEngine({ npc, onClose }: DialogEngineProps) {
     if (canAdvance) setLineIdx(i => i + 1);
   };
 
-  const choose = (choice: DialogChoice) => {
+  const choose = async (choice: DialogChoice) => {
+    let newRewards = rewards;
     if (choice.reward) {
       const r = choice.reward;
-      setRewards(prev => ({
-        xp: prev.xp + (r.xp ?? 0),
-        creds: prev.creds + (r.creds ?? 0),
-        items: r.item ? [...prev.items, r.item] : prev.items,
-      }));
-      if (r.xp) pushNotif({ type: 'quest', title: `+${r.xp} XP`, body: `Получено от ${npc.name}`, icon: '📜', color: npc.factionColor });
+      newRewards = {
+        xp: rewards.xp + (r.xp ?? 0),
+        creds: rewards.creds + (r.creds ?? 0),
+        items: r.item ? [...rewards.items, r.item] : rewards.items,
+      };
+      setRewards(newRewards);
     }
     setNodeId(choice.nextId);
     setLineIdx(0);
     const next = npc.dialog.find(n => n.id === choice.nextId);
-    if (next?.end) setFinished(true);
+    if (next?.end) {
+      setFinished(true);
+      // Выдаём накопленные награды на сервер (один раз)
+      if (!rewardSent && (newRewards.xp > 0 || newRewards.creds > 0)) {
+        setRewardSent(true);
+        const res = await api.npcReward(npc.id, newRewards.xp, newRewards.creds);
+        if (res && !res.error) {
+          applyXpResult(res as XpResult);
+          if (newRewards.xp > 0)
+            pushNotif({ type: 'quest', title: `+${newRewards.xp} XP`, body: `Награда от ${npc.name}`, icon: '📜', color: npc.factionColor });
+          if (res.leveled_up)
+            pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: 'Статы улучшены', icon: '⚡', color: '#00ff41' });
+        }
+      }
+    }
   };
 
   return (

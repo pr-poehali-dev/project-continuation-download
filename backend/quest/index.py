@@ -412,4 +412,83 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return json_response({**award_result, "ok": True, "is_new_best": is_new_best, "score_pct": score_pct})
 
+    # npc_reward — выдать XP/coins за диалог с NPC (вызывается из фронта)
+    if action == "npc_reward":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        xp_reward    = int(body.get("xp", 0))
+        coins_reward = int(body.get("coins", 0))
+        npc_id       = body.get("npc_id", "unknown")
+
+        if xp_reward <= 0 and coins_reward <= 0:
+            return json_response({"ok": True, "xp_gained": 0, "coins_gained": 0})
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+        result = award_xp(cur, char_id, xp_reward, coins_reward)
+        conn.commit()
+        conn.close()
+        return json_response({**result, "ok": True, "npc_id": npc_id})
+
+    # quest_claim — выдать награду за завершённый квест из QuestLog
+    if action == "quest_claim":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        xp_reward    = int(body.get("xp", 0))
+        coins_reward = int(body.get("coins", 0))
+
+        if xp_reward <= 0 and coins_reward <= 0:
+            return json_response({"ok": True, "xp_gained": 0, "coins_gained": 0})
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+        result = award_xp(cur, char_id, xp_reward, coins_reward)
+        conn.commit()
+        conn.close()
+        return json_response({**result, "ok": True})
+
+    # leaderboard — топ игроков по XP
+    if action == "leaderboard":
+        conn = get_conn()
+        cur  = conn.cursor()
+        cur.execute(f"""
+            SELECT u.username, c.level, c.xp, c.class, c.current_chapter,
+                   u.id,
+                   (SELECT COUNT(*) FROM {SCHEMA}.battles b WHERE b.user_id = u.id AND b.result = 'win') as wins
+            FROM {SCHEMA}.users u
+            JOIN {SCHEMA}.characters c ON c.user_id = u.id
+            ORDER BY c.xp DESC, c.level DESC
+            LIMIT 50
+        """)
+        rows = cur.fetchall()
+        conn.close()
+
+        leaders = []
+        for i, r in enumerate(rows):
+            leaders.append({
+                "rank":    i + 1,
+                "username": r[0],
+                "level":   r[1],
+                "xp":      r[2],
+                "class":   r[3],
+                "chapter": r[4],
+                "user_id": r[5],
+                "wins":    r[6] or 0,
+            })
+        return json_response({"leaderboard": leaders})
+
     return json_response({"error": "Not found"}, 404)
