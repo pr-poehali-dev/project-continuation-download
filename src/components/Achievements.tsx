@@ -115,6 +115,8 @@ export default function Achievements() {
     return acc + (match ? parseInt(match[1]) : 0);
   }, 0);
 
+  const unlockedCount = achievementsWithProgress.filter(a => a.unlocked).length;
+
   return (
     <section className="py-8 px-4 lg:px-6 min-h-screen relative">
       <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
