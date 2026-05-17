@@ -9,33 +9,27 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { id: 'home',          label: 'Главная',     icon: 'Home',        color: '#00ffff' },
-  { id: 'map',           label: 'Карта',       icon: 'Map',         color: '#00ffff' },
-  { id: 'profile',       label: 'Профиль',     icon: 'User',        color: '#00ffff' },
-  { id: 'lessons',       label: 'Уроки',       icon: 'BookOpen',    color: '#00ff41' },
-  { id: 'npc',           label: 'Агенты',      icon: 'MessageCircle', color: '#00ff41' },
-  { id: 'quests',        label: 'Квесты',      icon: 'Scroll',      color: '#00aaff' },
-  { id: 'achievements',  label: 'Достижения',  icon: 'Award',       color: '#ffff00' },
-  { id: 'battle',        label: 'Code Combat', icon: 'Sword',       color: '#ff00ff' },
-  { id: 'dungeon',       label: 'Подземелья',  icon: 'Castle',      color: '#ffaa00' },
-  { id: 'crafting',      label: 'Крафт',       icon: 'Hammer',      color: '#aa00ff' },
-  { id: 'shop',          label: 'Магазин',     icon: 'ShoppingBag', color: '#aa00ff' },
-  { id: 'notifications', label: 'Входящие',    icon: 'Bell',        color: '#555' },
-  { id: 'leaderboard',   label: 'Рейтинг',     icon: 'Trophy',      color: '#ffff00' },
+  { id: 'home',          label: 'Главная',     icon: 'Home',     color: '#00ffff' },
+  { id: 'profile',       label: 'Профиль',     icon: 'User',     color: '#00ff41' },
+  { id: 'map',           label: 'Карта',       icon: 'Map',      color: '#00aaff' },
+  { id: 'quests',        label: 'Квесты',      icon: 'Scroll',   color: '#aa00ff' },
+  { id: 'achievements',  label: 'Достижения',  icon: 'Award',    color: '#ffff00' },
+  { id: 'leaderboard',   label: 'Рейтинг',     icon: 'Trophy',   color: '#ffaa00' },
+  { id: 'notifications', label: 'Входящие',    icon: 'Bell',     color: '#888' },
 ];
 
-// Классы — новые имена + обратная совместимость
+// Классы — 2 класса + обратная совместимость
 const CLASS_EMOJI: Record<string, string> = {
-  cipher: '💀', data_ghost: '👁️', neural_architect: '🧠',
-  hacker: '💀', netrunner: '🕶️', street_samurai: '⚡',
+  cipher: '💀', data_ghost: '👁️',
+  hacker: '💀', netrunner: '👁️', neural_architect: '👁️', street_samurai: '💀',
 };
 const CLASS_COLOR: Record<string, string> = {
-  cipher: '#00ff41', data_ghost: '#00aaff', neural_architect: '#aa00ff',
-  hacker: '#00ff41', netrunner: '#00aaff', street_samurai: '#aa00ff',
+  cipher: '#00ff41', data_ghost: '#00aaff',
+  hacker: '#00ff41', netrunner: '#00aaff', neural_architect: '#00aaff', street_samurai: '#00ff41',
 };
 const CLASS_LABEL: Record<string, string> = {
-  cipher: 'CIPHER', data_ghost: 'DATA GHOST', neural_architect: 'NEURAL ARCHITECT',
-  hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
+  cipher: 'CIPHER', data_ghost: 'DATA GHOST',
+  hacker: 'CIPHER', netrunner: 'DATA GHOST', neural_architect: 'DATA GHOST', street_samurai: 'CIPHER',
 };
 
 export default function Sidebar({ activeSection, onNavigate, onCollapse }: SidebarProps) {
