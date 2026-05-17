@@ -20,6 +20,7 @@ import Achievements from '@/components/Achievements';
 import NpcDialog from '@/components/NpcDialog';
 import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import BetaBanner from '@/components/BetaBanner';
+import QuestWatcher from '@/components/QuestWatcher';
 import { useGame } from '@/lib/GameContext';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
@@ -124,6 +125,7 @@ export default function Index() {
         {activeSection === 'npc' && <NpcDialog />}
       </main>
       <ToastContainer />
+      <QuestWatcher />
       <BetaBanner version="0.1.0-beta" />
       {showOnboarding && (
         <Onboarding
