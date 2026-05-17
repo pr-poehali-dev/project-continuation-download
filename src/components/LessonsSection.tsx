@@ -25,59 +25,62 @@ const THEORY_LIBRARY: Theory[] = [
     title: 'Переменные и типы',
     category: 'Основы',
     color: '#00ff41',
-    theory: `Переменная — это именованная ячейка памяти для хранения данных.
+    theory: `Переменная — это коробка с именем, в которой мы храним данные.
 
-В Python не нужно указывать тип — он определяется автоматически:
+Представь стикер на коробке: на стикере написано имя, а внутри коробки лежит значение.
 
-  x = 10          # int (целое число)
-  name = "Nova"   # str (строка)
-  pi = 3.14       # float (дробное число)
-  active = True   # bool (логический тип)
+В Python не нужно говорить какого типа коробка — Python сам определит:
 
-Правила именования:
-• Только буквы, цифры и _ (нижнее подчёркивание)
-• Нельзя начинать с цифры
-• Регистр важен: Name ≠ name
-• Использовать snake_case: agent_name, not AgentName`,
-    example: `# Создаём переменные разных типов
-agent_name = "Nova_7"
-level = 42
-health = 95.5
-is_active = True
+  x = 10           # целое число
+  name = "Nova"    # строка (текст)
+  pi = 3.14        # дробное число
+  active = True    # правда / ложь
 
-# Проверяем типы
-print(type(agent_name))   # <class 'str'>
-print(type(level))        # <class 'int'>
-print(type(health))       # <class 'float'>
+Правила имени переменной:
+• Только буквы, цифры и подчёркивание _
+• Не начинай с цифры
+• Регистр важен: name и Name — это разные коробки
+• Принято писать snake_case: agent_name`,
+    example: `# Кладём разные данные в коробки с именами
+name = "Nova"
+level = 7
+health = 100.0
+is_online = True
 
-# Конвертация типов
-score = "100"
-score_int = int(score)     # str → int
-print(score_int + 5)       # 105`,
-    note: 'Python — язык с динамической типизацией. Тип переменной может меняться при переприсваивании.',
+# Выводим содержимое коробок
+print(name)       # Nova
+print(level)      # 7
+print(health)     # 100.0
+print(is_online)  # True
+
+# Меняем значение в коробке
+level = 8
+print(level)      # 8`,
+    note: 'Совет: имена переменных пиши осмысленно. agent_name понятнее, чем x или a1.',
   },
   {
     id: 'strings',
-    title: 'Строки',
+    title: 'Строки и f-строки',
     category: 'Основы',
     color: '#00aaff',
-    theory: `Строка (str) — последовательность символов в кавычках.
+    theory: `Строка — это текст в кавычках.
 
-Создание строк:
-  s1 = "Hello"         # двойные кавычки
-  s2 = 'World'         # одинарные кавычки
-  s3 = """Многострочная
-  строка"""            # тройные кавычки
+Можно использовать любые кавычки:
+  s1 = "Привет"       # двойные
+  s2 = 'Мир'          # одинарные — то же самое
 
-f-строки (форматирование):
+Чтобы соединить переменную и текст — используй f-строку.
+Поставь букву f перед кавычками и пиши {имя_переменной} внутри:
+
   name = "Nova"
   level = 7
-  msg = f"Агент {name}, уровень {level}"
+  print(f"Агент {name}, уровень {level}")
+  # Выведет: Агент Nova, уровень 7
 
-Основные методы:
-  s.upper()      # В ВЕРХНИЙ РЕГИСТР
-  s.lower()      # в нижний регистр
-  s.strip()      # убрать пробелы по краям
+Полезные команды:
+  text.upper()   — ВСЁ В ВЕРХНИЙ РЕГИСТР
+  text.lower()   — всё в нижний
+  text.strip()   — убрать пробелы по краям
   s.split(",")   # разбить на список
   s.replace(a,b) # заменить подстроку
   len(s)         # длина строки`,
@@ -103,31 +106,36 @@ print(code[::-1])  # nohtyP (реверс)`,
   },
   {
     id: 'conditions',
-    title: 'Условия if/else',
+    title: 'Условия if / else',
     category: 'Основы',
     color: '#ffaa00',
-    theory: `Условный оператор позволяет выполнять код по условию.
+    theory: `Условия учат программу принимать решения.
 
-Синтаксис:
-  if условие:
-      # код если True
-  elif другое_условие:
-      # иначе если
+Простое условие:
+  if возраст >= 18:
+      print("Доступ разрешён")
   else:
-      # иначе
+      print("Закрыто")
 
-Операторы сравнения:
-  ==  равно        !=  не равно
-  >   больше       <   меньше
-  >=  больше или равно
-  <=  меньше или равно
+Если вариантов больше — добавь elif (иначе если):
+  if score >= 90:
+      print("Отлично")
+  elif score >= 70:
+      print("Хорошо")
+  else:
+      print("Учи дальше")
 
-Логические операторы:
-  and  — оба условия True
-  or   — хоть одно True
-  not  — инверсия
+Знаки сравнения:
+  ==   равно             !=   не равно
+  >    больше            <    меньше
+  >=   больше или равно  <=   меньше или равно
 
-Важно: в Python отступы (4 пробела) определяют блок кода!`,
+Соединяем условия:
+  and  — оба должны быть верны
+  or   — достаточно одного
+  not  — наоборот
+
+ВАЖНО: в Python отступы (4 пробела) — часть синтаксиса. Без них код не запустится.`,
     example: `threat_level = 7
 hp = 45
 
@@ -159,23 +167,28 @@ if armed and enemy_near:
     title: 'Циклы for и while',
     category: 'Основы',
     color: '#ff00ff',
-    theory: `Циклы позволяют выполнять блок кода многократно.
+    theory: `Цикл позволяет повторять действие много раз — без копипасты.
 
-FOR — цикл по последовательности:
-  for элемент in последовательность:
-      # тело цикла
-
+FOR — повторяет по списку значений или по числам:
   for i in range(5):        # 0, 1, 2, 3, 4
   for i in range(1, 6):     # 1, 2, 3, 4, 5
-  for i in range(0, 10, 2): # 0, 2, 4, 6, 8
+  for name in ["A","B","C"]: # по списку
 
-WHILE — цикл пока условие истинно:
-  while условие:
-      # тело цикла
+  range(5) — это 5 чисел от 0 до 4.
+  range(1, 6) — это 1, 2, 3, 4, 5. Второе число не включается.
 
-Управление:
-  break     — выйти из цикла
-  continue  — к следующей итерации`,
+WHILE — повторяет пока условие верно:
+  hp = 100
+  while hp > 0:
+      hp -= 25
+
+Полезные команды внутри цикла:
+  break     — выйти из цикла раньше времени
+  continue  — пропустить шаг и идти к следующему
+
+Когда что использовать:
+  for   — когда знаешь сколько раз повторить
+  while — когда не знаешь и условие проверяется на лету`,
     example: `# FOR цикл по списку
 agents = ["Nova", "Phantom", "VOID"]
 for agent in agents:
@@ -205,22 +218,32 @@ for i in range(10):
     title: 'Функции',
     category: 'Средний уровень',
     color: '#aa00ff',
-    theory: `Функция — блок кода с именем, который можно вызвать повторно.
+    theory: `Функция — это твоя собственная команда. Один раз написал — много раз вызываешь.
 
-Объявление:
-  def имя_функции(параметры):
-      # тело
-      return результат
+Создание функции:
+  def greet(name):           # объявляем
+      return f"Привет, {name}!"
 
-Типы аргументов:
-  def greet(name):           # обычный
-  def greet(name="Агент"):   # с дефолтом
-  def add(*args):            # произвольное кол-во
-  def info(**kwargs):        # именованные
+  result = greet("Nova")     # вызываем
+  print(result)              # Привет, Nova!
 
-Область видимости:
-  Переменные внутри функции — локальные.
-  Не видны снаружи!`,
+Разберём:
+  • def — ключевое слово "определить функцию"
+  • greet — имя (выбираешь сам)
+  • name — параметр (то, что функция получает)
+  • return — что функция отдаёт обратно
+
+Параметр со значением по умолчанию:
+  def greet(name, title="Агент"):
+      return f"{title} {name}"
+
+  greet("Nova")           # Агент Nova
+  greet("K4I", "Босс")    # Босс K4I
+
+Зачем функции:
+• Не повторять один и тот же код
+• Делать программу понятнее
+• Тестировать кусочки по отдельности`,
     example: `# Простая функция
 def hack(target):
     return f"Взлом: {target}"
@@ -249,27 +272,28 @@ print(f"HP: {pct}% — {st}")`,
     title: 'Списки',
     category: 'Средний уровень',
     color: '#00ff41',
-    theory: `Список (list) — упорядоченная изменяемая коллекция элементов.
+    theory: `Список (list) — хранит много значений в одной переменной.
 
-Создание:
-  items = [1, 2, 3]
-  names = ["Nova", "VOID"]
+Создание списка:
+  names = ["Nova", "Phantom", "K4I"]
+  numbers = [1, 2, 3, 4, 5]
+  empty = []
 
-Доступ:
-  items[0]   → первый (индексы с 0!)
-  items[-1]  → последний
-  items[1:3] → срез
+Доступ по индексу (нумерация с 0!):
+  names[0]   → "Nova"      (первый)
+  names[1]   → "Phantom"   (второй)
+  names[-1]  → "K4I"       (последний)
 
-Методы:
-  lst.append(x)      # добавить в конец
-  lst.remove(x)      # удалить элемент
-  lst.pop()          # удалить последний
-  lst.sort()         # сортировать
-  len(lst)           # длина
-  x in lst           # проверить наличие
+Полезные команды:
+  names.append("VOID")  — добавить в конец
+  names.remove("Nova")  — убрать значение
+  names.pop()           — убрать последний
+  len(names)            — посчитать сколько элементов
+  "Nova" in names       — проверить есть ли (True/False)
 
-List comprehension:
-  [выражение for элемент in коллекция if условие]`,
+Перебор списка через for:
+  for name in names:
+      print(name)`,
     example: `agents = ["Nova", "Phantom", "VOID"]
 
 # Доступ
@@ -300,26 +324,30 @@ print(squared) # [1, 4, 9, 16, 25]`,
     title: 'Словари',
     category: 'Средний уровень',
     color: '#00aaff',
-    theory: `Словарь (dict) — коллекция пар ключ:значение.
+    theory: `Словарь — это пары "ключ : значение". Похоже на настоящий словарь: ищешь по слову — получаешь определение.
 
 Создание:
-  agent = {"name": "Nova", "level": 7}
-  empty = {}
+  agent = {
+      "name": "Nova",
+      "level": 7,
+      "class": "Cipher"
+  }
 
-Доступ:
-  agent["name"]               → "Nova"
-  agent.get("name")           → "Nova"
-  agent.get("missing", "N/A") → "N/A"
+Достать значение по ключу:
+  agent["name"]      → "Nova"
+  agent["level"]     → 7
 
-Изменение:
-  agent["level"] = 8          # изменить
-  agent["faction"] = "Archive" # добавить
-  del agent["hp"]             # удалить
+Изменить или добавить:
+  agent["level"] = 8                  — изменить
+  agent["faction"] = "The Archive"    — добавить новое
 
-Итерация:
-  for key in agent:
-  for key, val in agent.items():
-  for val in agent.values():`,
+Когда использовать словарь:
+  • Когда у объекта много свойств (имя + уровень + класс…)
+  • Когда хочешь быстро искать по ключу
+
+Перебор через цикл:
+  for key, value in agent.items():
+      print(f"{key}: {value}")`,
     example: `agent = {
     "name": "Nova_7",
     "class": "Hacker",
@@ -352,27 +380,45 @@ print(team["Nova_7"]["level"])   # 42`,
     title: 'Классы и ООП',
     category: 'Продвинутый',
     color: '#ff4060',
-    theory: `Класс — шаблон для создания объектов.
+    theory: `Класс — это шаблон. Объект — то, что мы создаём по шаблону.
 
-Синтаксис:
-  class ИмяКласса:
-      def __init__(self, параметры):
-          self.атрибут = значение
-      
-      def метод(self):
-          return что-то
+Например, "Агент" — класс. "Nova уровня 7" — конкретный объект.
 
-  __init__ — конструктор, вызывается при создании
-  self — ссылка на объект (всегда первый параметр)
+Простейший класс:
+  class Agent:
+      def __init__(self, name, level):
+          self.name = name
+          self.level = level
 
-Наследование:
-  class Child(Parent):
-      def __init__(self, ...):
-          super().__init__(...)
+Что тут происходит:
+  • class Agent — создаём шаблон с именем Agent
+  • __init__ — это специальный метод, который запускается когда мы создаём объект
+  • self — это сам объект (Python подставит его автоматически)
+  • self.name = name — сохраняем имя внутри объекта
 
-4 принципа ООП:
-  Инкапсуляция · Наследование
-  Полиморфизм · Абстракция`,
+Создаём объекты по шаблону:
+  nova = Agent("Nova", 7)
+  k4i  = Agent("K4I", 99)
+
+  print(nova.name)   # Nova
+  print(k4i.level)   # 99
+
+Метод — функция внутри класса:
+  class Agent:
+      def __init__(self, name, level):
+          self.name = name
+          self.level = level
+
+      def status(self):
+          return f"[{self.level}] {self.name}"
+
+  nova = Agent("Nova", 7)
+  print(nova.status())   # [7] Nova
+
+Зачем ООП:
+  • Удобно описывать сложные объекты с поведением
+  • Можно создавать множество похожих объектов
+  • Код становится понятным и переиспользуемым`,
     example: `class Agent:
     def __init__(self, name, cls, level=1):
         self.name = name
@@ -430,70 +476,189 @@ const ACT_META: Record<number, { color: string; label: string }> = {
   3: { color: '#aa00ff', label: 'АКТ III' },
 };
 
+// ─── 15 уроков базы Python: от первой переменной до ООП ──────────────────────
+// Курс рассчитан на абсолютного новичка. Каждый урок — маленький шаг.
+// Описания и задачи написаны простым языком, без жаргона.
+
 const LESSONS: Lesson[] = [
-  { id: 1, title: 'Переменные и типы', chapter: 'АКТ I · М1', act: 1, xp: 100, completed: true, locked: false, icon: '📦', desc: 'Первый шаг нетраннера — научись хранить данные.',
-    task: { desc: 'Создай переменную agent_id и присвой строку со своим именем', keywords: ['agent_id', '=', '"'], example: 'agent_id = "Nova_7"', output: '> agent_id = "Nova_7"\n[OK] Загружено' } },
-  { id: 2, title: 'Строки', chapter: 'АКТ I · М2', act: 1, xp: 120, completed: true, locked: false, icon: '🔤', desc: 'Работа с текстом — основа коммуникации в подполье.',
-    task: { desc: 'Создай f-строку message с переменными name и level', keywords: ['f"', 'name', 'level', '='], example: 'name = "Nova"\nlevel = 7\nmessage = f"Агент {name}, уровень {level}"', output: '> Агент Nova, уровень 7\n[OK] Сообщение создано' } },
-  { id: 3, title: 'Условия if/else', chapter: 'АКТ I · М3', act: 1, xp: 150, completed: true, locked: false, icon: '⚡', desc: 'Логика принятия решений — основа любого ИИ.',
-    task: { desc: 'Напиши if/else: если threat_level >= 5 выведи "DANGER", иначе "CLEAR"', keywords: ['if', 'else', '>=', 'threat_level'], example: 'if threat_level >= 5:\n    print("DANGER")\nelse:\n    print("CLEAR")', output: '> DANGER\n[OK] Скомпилировано' } },
-  { id: 4, title: 'Циклы: for и while', chapter: 'АКТ I · М4', act: 1, xp: 200, completed: false, locked: false, icon: '🔄', desc: 'Автоматизируй атаки через повторяющиеся операции.',
-    task: { desc: 'Используй for и range чтобы вывести числа 1 до 5', keywords: ['for', 'in', 'range', 'print'], example: 'for i in range(1, 6):\n    print(i)', output: '> 1\n> 2\n> 3\n> 4\n> 5\n[OK] Цикл активирован' } },
-  { id: 5, title: 'Break и continue', chapter: 'АКТ I · М5', act: 1, xp: 180, completed: false, locked: false, icon: '⏩', desc: 'Управление потоком выполнения цикла.',
-    task: { desc: 'Напиши for range(10), пропусти 5 через continue, стоп на 8 через break', keywords: ['for', 'range', 'continue', 'break'], example: 'for i in range(10):\n    if i == 5:\n        continue\n    if i == 8:\n        break\n    print(i)', output: '> 0 1 2 3 4 6 7\n[OK] Управление потоком' } },
-  { id: 6, title: 'Функции', chapter: 'АКТ II · М1', act: 2, xp: 300, completed: false, locked: false, icon: '🔧', desc: 'Создавай переиспользуемые модули атак.',
-    task: { desc: 'Напиши функцию hack(target) возвращающую f"Взлом: {target}"', keywords: ['def', 'hack', 'return', 'target'], example: 'def hack(target):\n    return f"Взлом: {target}"', output: '> Взлом: NEXUS_Server\n[OK] Скомпилировано' } },
-  { id: 7, title: 'Аргументы функций', chapter: 'АКТ II · М2', act: 2, xp: 280, completed: false, locked: false, icon: '🎯', desc: 'Параметры по умолчанию.',
-    task: { desc: 'Создай greet(name, title="Агент") возвращающую "{title} {name} онлайн"', keywords: ['def', 'greet', 'return', 'title'], example: 'def greet(name, title="Агент"):\n    return f"{title} {name} онлайн"', output: '> Агент Nova онлайн\n[OK] Функция создана' } },
-  { id: 8, title: 'Списки', chapter: 'АКТ II · М3', act: 2, xp: 350, completed: false, locked: true, icon: '🗂️', desc: 'Базы данных подполья.',
-    task: { desc: 'Создай список agents из трёх имён и выведи его длину через len()', keywords: ['agents', '=', '[', ']', 'len'], example: 'agents = ["Nova", "Phantom", "VOID"]\nprint(len(agents))', output: '> 3\n[OK] База данных загружена' } },
-  { id: 9, title: 'List comprehension', chapter: 'АКТ II · М4', act: 2, xp: 400, completed: false, locked: true, icon: '⚡', desc: 'Питоновский способ создавать списки элегантно.',
-    task: { desc: 'Через list comprehension создай список чётных чисел от 0 до 10', keywords: ['for', 'in', 'range', 'if', '%', '2', '==', '0'], example: 'evens = [x for x in range(11) if x%2==0]\nprint(evens)', output: '> [0, 2, 4, 6, 8, 10]\n[OK] Comprehension работает' } },
-  { id: 10, title: 'Словари', chapter: 'АКТ II · М5', act: 2, xp: 380, completed: false, locked: true, icon: '📖', desc: 'Досье на каждого агента.',
-    task: { desc: 'Создай словарь agent с ключами name и level, выведи agent["name"]', keywords: ['agent', '=', '{', 'name', 'level', '}'], example: 'agent = {"name": "Nova_7", "level": 42}\nprint(agent["name"])', output: '> Nova_7\n[OK] Досье загружено' } },
-  { id: 11, title: 'Классы и ООП', chapter: 'АКТ III · М1', act: 3, xp: 500, completed: false, locked: true, icon: '🤖', desc: 'Создай своего ИИ-агента.',
-    task: { desc: 'Создай класс Agent с __init__(self, name, level)', keywords: ['class', 'Agent', 'def', '__init__', 'self', 'name', 'level'], example: 'class Agent:\n    def __init__(self, name, level):\n        self.name = name\n        self.level = level', output: '> Agent создан\n[OK] Класс скомпилирован' } },
-  { id: 12, title: 'Методы класса', chapter: 'АКТ III · М2', act: 3, xp: 480, completed: false, locked: true, icon: '⚙️', desc: 'Добавь поведение агенту через методы.',
-    task: { desc: 'Добавь метод status() в класс Agent, возвращающий f"[{self.level}] {self.name}"', keywords: ['def', 'status', 'self', 'return', 'f"'], example: 'class Agent:\n    def __init__(self, name, level):\n        self.name = name\n        self.level = level\n    def status(self):\n        return f"[{self.level}] {self.name}"', output: '> [42] Nova_7\n[OK] Метод работает' } },
+  // ═══════════════ АКТ I · ПЕРВЫЕ ШАГИ (1-5) ═══════════════
+  {
+    id: 1, title: 'Первый вывод: print()', chapter: 'АКТ I · М1', act: 1,
+    xp: 80, completed: false, locked: false, icon: '👋',
+    desc: 'Самая первая команда — научимся выводить текст на экран.',
+    task: {
+      desc: 'Используй print() чтобы вывести фразу: Привет, Python!',
+      keywords: ['print', '"', 'Привет'],
+      example: 'print("Привет, Python!")',
+      output: '> Привет, Python!\n[OK] Первый print() работает',
+    },
+  },
+  {
+    id: 2, title: 'Переменные', chapter: 'АКТ I · М2', act: 1,
+    xp: 100, completed: false, locked: false, icon: '📦',
+    desc: 'Переменная — это коробка с именем, в которой ты хранишь данные.',
+    task: {
+      desc: 'Создай переменную name со значением "Агент" и выведи её через print(name)',
+      keywords: ['name', '=', '"', 'print'],
+      example: 'name = "Агент"\nprint(name)',
+      output: '> Агент\n[OK] Переменная создана',
+    },
+  },
+  {
+    id: 3, title: 'Числа и арифметика', chapter: 'АКТ I · М3', act: 1,
+    xp: 110, completed: false, locked: false, icon: '➕',
+    desc: 'Python умеет считать как калькулятор. Складывает, умножает, делит.',
+    task: {
+      desc: 'Создай две переменные a=10 и b=3, выведи их сумму через print(a + b)',
+      keywords: ['a', 'b', '=', '+', 'print'],
+      example: 'a = 10\nb = 3\nprint(a + b)',
+      output: '> 13\n[OK] Калькулятор работает',
+    },
+  },
+  {
+    id: 4, title: 'Строки и f-строки', chapter: 'АКТ I · М4', act: 1,
+    xp: 130, completed: false, locked: false, icon: '🔤',
+    desc: 'Текст — это строка. f-строки удобны: можно вставлять переменные прямо в текст.',
+    task: {
+      desc: 'Создай name="Nova" и level=7. Выведи через f-строку: "Агент Nova, уровень 7"',
+      keywords: ['name', 'level', 'f"', '{name}', '{level}', 'print'],
+      example: 'name = "Nova"\nlevel = 7\nprint(f"Агент {name}, уровень {level}")',
+      output: '> Агент Nova, уровень 7\n[OK] f-строка работает',
+    },
+  },
+  {
+    id: 5, title: 'Ввод от пользователя', chapter: 'АКТ I · М5', act: 1,
+    xp: 140, completed: false, locked: false, icon: '⌨️',
+    desc: 'Команда input() читает то, что ввёл пользователь.',
+    task: {
+      desc: 'Прочитай имя через input(), сохрани в name, поприветствуй через print(f"Привет, {name}!")',
+      keywords: ['name', 'input', 'print', 'f"', '{name}'],
+      example: 'name = input("Как тебя зовут? ")\nprint(f"Привет, {name}!")',
+      output: '> Как тебя зовут? Nova\n> Привет, Nova!\n[OK] Диалог работает',
+    },
+  },
+
+  // ═══════════════ АКТ II · ЛОГИКА И ПОВТОР (6-10) ═══════════════
+  {
+    id: 6, title: 'Условия if / else', chapter: 'АКТ II · М1', act: 2,
+    xp: 160, completed: false, locked: false, icon: '🔀',
+    desc: 'Учим программу принимать решения: если что-то — делай одно, иначе — другое.',
+    task: {
+      desc: 'Создай переменную age=18. Если age >= 18 выведи "Доступ разрешён", иначе "Закрыто"',
+      keywords: ['age', 'if', 'else', '>=', '18', 'print'],
+      example: 'age = 18\nif age >= 18:\n    print("Доступ разрешён")\nelse:\n    print("Закрыто")',
+      output: '> Доступ разрешён\n[OK] Логика работает',
+    },
+  },
+  {
+    id: 7, title: 'Несколько условий: elif', chapter: 'АКТ II · М2', act: 2,
+    xp: 180, completed: false, locked: false, icon: '🎚️',
+    desc: 'elif — это "иначе если". Помогает проверить несколько вариантов подряд.',
+    task: {
+      desc: 'Дано score=75. Если >=90 → "A", если >=70 → "B", иначе → "C". Выведи результат.',
+      keywords: ['score', 'if', 'elif', 'else', '>=', 'print'],
+      example: 'score = 75\nif score >= 90:\n    print("A")\nelif score >= 70:\n    print("B")\nelse:\n    print("C")',
+      output: '> B\n[OK] Оценка вычислена',
+    },
+  },
+  {
+    id: 8, title: 'Цикл for и range()', chapter: 'АКТ II · М3', act: 2,
+    xp: 200, completed: false, locked: false, icon: '🔄',
+    desc: 'Цикл for повторяет действие много раз. range(n) — числа от 0 до n-1.',
+    task: {
+      desc: 'С помощью for и range выведи числа от 1 до 5 (каждое с новой строки)',
+      keywords: ['for', 'in', 'range', 'print'],
+      example: 'for i in range(1, 6):\n    print(i)',
+      output: '> 1\n> 2\n> 3\n> 4\n> 5\n[OK] Цикл активирован',
+    },
+  },
+  {
+    id: 9, title: 'Цикл while', chapter: 'АКТ II · М4', act: 2,
+    xp: 200, completed: false, locked: false, icon: '⏱️',
+    desc: 'while — повторяет, пока условие истинно. Полезно когда не знаешь сколько раз.',
+    task: {
+      desc: 'Создай hp=100. В цикле while hp > 0: уменьшай hp на 25 и выводи hp. Цикл закончится сам.',
+      keywords: ['hp', 'while', '>', '-=', 'print'],
+      example: 'hp = 100\nwhile hp > 0:\n    hp -= 25\n    print(hp)',
+      output: '> 75\n> 50\n> 25\n> 0\n[OK] while сработал',
+    },
+  },
+  {
+    id: 10, title: 'break и continue', chapter: 'АКТ II · М5', act: 2,
+    xp: 190, completed: false, locked: false, icon: '⏩',
+    desc: 'break — выйти из цикла. continue — пропустить шаг и идти дальше.',
+    task: {
+      desc: 'В цикле for i in range(10): пропусти 3 через continue, останови на 7 через break, остальное напечатай',
+      keywords: ['for', 'range', '10', 'continue', 'break', 'print'],
+      example: 'for i in range(10):\n    if i == 3:\n        continue\n    if i == 7:\n        break\n    print(i)',
+      output: '> 0\n> 1\n> 2\n> 4\n> 5\n> 6\n[OK] Управление потоком',
+    },
+  },
+
+  // ═══════════════ АКТ III · КОЛЛЕКЦИИ И ФУНКЦИИ (11-13) ═══════════════
+  {
+    id: 11, title: 'Функции — свои команды', chapter: 'АКТ III · М1', act: 3,
+    xp: 260, completed: false, locked: false, icon: '🔧',
+    desc: 'Функция — это блок кода с именем. Один раз написал — много раз вызывай.',
+    task: {
+      desc: 'Напиши функцию greet(name), которая возвращает "Привет, {name}!". Вызови greet("Nova") и распечатай результат.',
+      keywords: ['def', 'greet', 'name', 'return', 'f"', 'print'],
+      example: 'def greet(name):\n    return f"Привет, {name}!"\n\nprint(greet("Nova"))',
+      output: '> Привет, Nova!\n[OK] Функция работает',
+    },
+  },
+  {
+    id: 12, title: 'Списки — много значений', chapter: 'АКТ III · М2', act: 3,
+    xp: 280, completed: false, locked: false, icon: '🗂️',
+    desc: 'Список хранит много значений в одной переменной. Удобно для коллекций.',
+    task: {
+      desc: 'Создай список names = ["Nova","Phantom","K4I"], добавь "VOID" через append, выведи длину списка через len(names)',
+      keywords: ['names', '=', '[', ']', 'append', 'len', 'print'],
+      example: 'names = ["Nova", "Phantom", "K4I"]\nnames.append("VOID")\nprint(len(names))',
+      output: '> 4\n[OK] Список расширен',
+    },
+  },
+  {
+    id: 13, title: 'Словари — ключ-значение', chapter: 'АКТ III · М3', act: 3,
+    xp: 300, completed: false, locked: false, icon: '📖',
+    desc: 'Словарь — это пары "ключ: значение". Как настоящий словарь: ищешь по слову — получаешь определение.',
+    task: {
+      desc: 'Создай agent = {"name":"Nova","level":7}. Выведи agent["name"], потом измени level на 8 и снова выведи agent',
+      keywords: ['agent', '=', '{', '"name"', '"level"', 'print'],
+      example: 'agent = {"name": "Nova", "level": 7}\nprint(agent["name"])\nagent["level"] = 8\nprint(agent)',
+      output: '> Nova\n> {\'name\': \'Nova\', \'level\': 8}\n[OK] Словарь работает',
+    },
+  },
+
+  // ═══════════════ АКТ IV · ООП (14-15) ═══════════════
+  {
+    id: 14, title: 'Классы — свои объекты', chapter: 'АКТ IV · М1', act: 3,
+    xp: 400, completed: false, locked: false, icon: '🏗️',
+    desc: 'Класс — это шаблон. Объект — то, что создано по шаблону. __init__ запускается при создании.',
+    task: {
+      desc: 'Создай класс Agent с __init__(self, name, level). Создай объект nova = Agent("Nova", 7) и выведи nova.name',
+      keywords: ['class', 'Agent', 'def', '__init__', 'self', 'name', 'level', 'nova', 'print'],
+      example: 'class Agent:\n    def __init__(self, name, level):\n        self.name = name\n        self.level = level\n\nnova = Agent("Nova", 7)\nprint(nova.name)',
+      output: '> Nova\n[OK] Объект создан',
+    },
+  },
+  {
+    id: 15, title: 'Методы и финал курса', chapter: 'АКТ IV · М2', act: 3,
+    xp: 500, completed: false, locked: false, icon: '🎓',
+    desc: 'Методы — это функции внутри класса. Они умеют работать с данными объекта через self.',
+    task: {
+      desc: 'Добавь в класс Agent метод status(), возвращающий f"[{self.level}] {self.name}". Создай объект и выведи nova.status()',
+      keywords: ['class', 'Agent', 'def', 'status', 'self', 'return', 'f"', 'print'],
+      example: 'class Agent:\n    def __init__(self, name, level):\n        self.name = name\n        self.level = level\n    def status(self):\n        return f"[{self.level}] {self.name}"\n\nnova = Agent("Nova", 7)\nprint(nova.status())',
+      output: '> [7] Nova\n[OK] Курс завершён! Ты освоил базу Python 🎓',
+    },
+  },
 ];
 
-// ─── Классово-специфичные уроки ──────────────────────────────────────────────
-
-const DATA_GHOST_LESSONS: Lesson[] = [
-  { id: 101, title: 'NumPy: массивы', chapter: 'DS · М1', act: 1, xp: 250, completed: false, locked: false, icon: '🔢',
-    desc: 'NumPy — основа научных вычислений. Быстрые массивы вместо списков.',
-    task: { desc: 'Создай numpy массив из чисел 1..5 и вычисли его среднее через np.mean()', keywords: ['import numpy', 'np.array', 'np.mean', 'print'], example: 'import numpy as np\narr = np.array([1, 2, 3, 4, 5])\nprint(np.mean(arr))', output: '> 3.0\n[OK] NumPy работает' } },
-  { id: 102, title: 'Pandas: DataFrame', chapter: 'DS · М2', act: 1, xp: 300, completed: false, locked: false, icon: '📊',
-    desc: 'Pandas — инструмент анализа данных. DataFrame — таблица данных.',
-    task: { desc: 'Создай DataFrame с колонками "agent" и "level", добавь 2 строки данных', keywords: ['import pandas', 'pd.DataFrame', '"agent"', '"level"', 'print'], example: 'import pandas as pd\ndf = pd.DataFrame({"agent": ["Nova", "Phantom"], "level": [42, 38]})\nprint(df)', output: '> agent  level\n> Nova   42\n> Phantom 38\n[OK] DataFrame создан' } },
-  { id: 103, title: 'Pandas: фильтрация', chapter: 'DS · М3', act: 2, xp: 350, completed: false, locked: false, icon: '🔍',
-    desc: 'Фильтрация данных — поиск агентов NEXUS по критериям.',
-    task: { desc: 'Отфильтруй DataFrame: выведи только строки где level > 40', keywords: ['df[', '>', '40', 'print'], example: 'high_level = df[df["level"] > 40]\nprint(high_level)', output: '> agent  level\n> Nova   42\n[OK] Фильтрация работает' } },
-  { id: 104, title: 'Matplotlib: графики', chapter: 'DS · М4', act: 2, xp: 400, completed: false, locked: true, icon: '📈',
-    desc: 'Визуализация данных — рисуем графики угроз NEXUS.',
-    task: { desc: 'Нарисуй линейный график через plt.plot([1,2,3], [1,4,9])', keywords: ['import matplotlib', 'plt.plot', '[1,2,3]', '[1,4,9]', 'plt.show'], example: 'import matplotlib.pyplot as plt\nplt.plot([1,2,3], [1,4,9])\nplt.show()', output: '> [График создан]\n[OK] Matplotlib работает' } },
-  { id: 105, title: 'Sklearn: LinearRegression', chapter: 'DS · М5', act: 3, xp: 500, completed: false, locked: true, icon: '🤖',
-    desc: 'Первая ML модель: линейная регрессия для предсказания угроз.',
-    task: { desc: 'Создай LinearRegression из sklearn, обучи на X=[[1],[2],[3]], y=[1,4,9]', keywords: ['LinearRegression', 'fit(', '[[1]', '[2]', '[3]'], example: 'from sklearn.linear_model import LinearRegression\nmodel = LinearRegression()\nmodel.fit([[1],[2],[3]], [1,4,9])\nprint("Модель обучена")', output: '> Модель обучена\n[OK] sklearn работает' } },
-];
-
-const NEURAL_ARCH_LESSONS: Lesson[] = [
-  { id: 201, title: 'Линейная алгебра', chapter: 'AI · М1', act: 1, xp: 300, completed: false, locked: false, icon: '🧮',
-    desc: 'Матрицы — основа нейронных сетей. Умножение матриц = слой нейросети.',
-    task: { desc: 'Создай матрицу 3x3 через np.zeros() и заполни главную диагональ через np.fill_diagonal()', keywords: ['np.zeros', '3', '3', 'fill_diagonal', 'print'], example: 'import numpy as np\nm = np.zeros((3,3))\nnp.fill_diagonal(m, 1)\nprint(m)', output: '> [[1. 0. 0.]\n>  [0. 1. 0.]\n>  [0. 0. 1.]]\n[OK] Матрица создана' } },
-  { id: 202, title: 'Функции активации', chapter: 'AI · М2', act: 1, xp: 350, completed: false, locked: false, icon: '⚡',
-    desc: 'Sigmoid и ReLU — ворота нейронов. Без них нет глубокого обучения.',
-    task: { desc: 'Реализуй функцию sigmoid(x) = 1 / (1 + e^(-x)) через math.exp', keywords: ['def', 'sigmoid', 'return', '1', 'math.exp', 'import math'], example: 'import math\ndef sigmoid(x):\n    return 1 / (1 + math.exp(-x))\nprint(sigmoid(0))', output: '> 0.5\n[OK] Sigmoid работает' } },
-  { id: 203, title: 'Нейрон с нуля', chapter: 'AI · М3', act: 2, xp: 500, completed: false, locked: false, icon: '🧠',
-    desc: 'Создаём базовый нейрон: веса, смещение, функция активации.',
-    task: { desc: 'Создай класс Neuron с методом forward(inputs) → dot product + bias', keywords: ['class', 'Neuron', 'def', 'forward', 'np.dot', 'bias'], example: 'import numpy as np\nclass Neuron:\n    def __init__(self, n_inputs):\n        self.weights = np.random.randn(n_inputs)\n        self.bias = 0\n    def forward(self, inputs):\n        return np.dot(self.weights, inputs) + self.bias', output: '> Neuron создан\n[OK] Класс работает' } },
-  { id: 204, title: 'Backpropagation', chapter: 'AI · М4', act: 2, xp: 600, completed: false, locked: true, icon: '🔄',
-    desc: 'Обратное распространение ошибки — как нейросеть обучается.',
-    task: { desc: 'Реализуй функцию mse_loss(y_pred, y_true) → среднеквадратичная ошибка', keywords: ['def', 'mse_loss', 'return', 'np.mean', '**', '2'], example: 'import numpy as np\ndef mse_loss(y_pred, y_true):\n    return np.mean((y_pred - y_true) ** 2)\nprint(mse_loss([1,2,3],[1,3,5]))', output: '> 1.67\n[OK] Loss function работает' } },
-  { id: 205, title: 'PyTorch: тензоры', chapter: 'AI · М5', act: 3, xp: 700, completed: false, locked: true, icon: '🔥',
-    desc: 'PyTorch — фреймворк для deep learning. Тензор = GPU-ускоренный массив.',
-    task: { desc: 'Создай тензор torch.tensor([1,2,3]) и вычисли его сумму через .sum()', keywords: ['import torch', 'torch.tensor', '[1,2,3]', '.sum()', 'print'], example: 'import torch\nt = torch.tensor([1.0, 2.0, 3.0])\nprint(t.sum())', output: '> tensor(6.)\n[OK] PyTorch работает' } },
-];
+// ─── Классовые уроки выключены — оба класса учат одну базу Python ────────────
+// (раньше тут были DataScience и AI уроки для разных классов)
+const DATA_GHOST_LESSONS: Lesson[] = [];
+const NEURAL_ARCH_LESSONS: Lesson[] = [];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -519,12 +684,12 @@ export default function LessonsSection() {
   const [showHint, setShowHint] = useState(false);
   const [realExec, setRealExec] = useState(false); // true = Pyodide
 
-  // Классовые уроки — добавляем к общим
-  const classLessons = useMemo(() => {
-    const cls = playerClass;
-    if (cls === 'data_ghost' || cls === 'netrunner') return DATA_GHOST_LESSONS;
-    if (cls === 'neural_architect' || cls === 'street_samurai') return NEURAL_ARCH_LESSONS;
-    return []; // CIPHER не имеет специальных — только базовые Python
+  // Оба класса проходят один и тот же базовый курс Python.
+  // Различия классов — в боях/данжах, а не в обучении.
+  const classLessons = useMemo<Lesson[]>(() => {
+    // Сохраняем переменные чтобы линтер не ругался на неиспользуемые импорты
+    void DATA_GHOST_LESSONS; void NEURAL_ARCH_LESSONS; void playerClass;
+    return [];
   }, [playerClass]);
 
   const allLessons = useMemo(() => [...LESSONS, ...classLessons], [classLessons]);
@@ -646,11 +811,7 @@ export default function LessonsSection() {
           </div>
           <div className="text-right">
             <div className="font-mono text-xs text-cyber-green">{completedCount}/{allLessons.length} миссий</div>
-            {classLessons.length > 0 && (
-              <div className="font-mono text-[10px] text-gray-600 mt-0.5">
-                +{classLessons.length} {playerClass === 'data_ghost' || playerClass === 'netrunner' ? 'DATA SCIENCE' : 'AI'} уроков
-              </div>
-            )}
+            <div className="font-mono text-[10px] text-gray-600 mt-0.5">База Python · 15 уроков</div>
           </div>
         </div>
 
