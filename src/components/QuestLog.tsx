@@ -4,7 +4,6 @@ import { useGame, XpResult } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
 import { useProgress } from '@/lib/useProgress';
-import { progress as progressStore } from '@/lib/progressStore';
 
 interface Quest {
   id: string;
@@ -40,8 +39,7 @@ type ObjectiveCheck =
   | { type: 'npc'; id: string }
   | { type: 'daily_lessons'; count: number }
   | { type: 'daily_battles'; count: number }
-  | { type: 'daily_dungeons'; count: number }
-  | { type: 'manual' };
+  | { type: 'daily_dungeons'; count: number };
 
 const TYPE_COLORS: Record<string, string> = {
   story: '#00ffff',
@@ -362,7 +360,6 @@ function checkObjective(
 ): boolean {
   const check = obj.check;
   if (!check) return false;
-  if (check.type === 'manual') return false;
 
   switch (check.type) {
     case 'lessons':         return p.lessonsCompleted.length >= check.count;
@@ -414,23 +411,10 @@ export default function QuestLog({ onNavigate }: { onNavigate?: (s: string) => v
     }
   };
 
+  // Только автоматическая проверка — игрок не может отметить сам
   const getObjDone = (q: Quest, idx: number): boolean => {
     const obj = q.objectives[idx];
-    // Сначала проверяем автоматически
-    const auto = checkObjective(obj, prog, character ? { level: character.level } : null);
-    if (auto) return true;
-    // Затем — ручная отметка
-    return progressStore.getQuestObjective(q.id, idx);
-  };
-
-  const toggleManual = (q: Quest, idx: number) => {
-    if (q.status !== 'active') return;
-    const obj = q.objectives[idx];
-    // Если есть автоматическая проверка — не позволяем снять вручную
-    const auto = checkObjective(obj, prog, character ? { level: character.level } : null);
-    if (auto) return; // уже выполнено автоматически
-    const current = progressStore.getQuestObjective(q.id, idx);
-    progressStore.setQuestObjective(q.id, idx, !current);
+    return checkObjective(obj, prog, character ? { level: character.level } : null);
   };
 
   const getQuestProgress = (q: Quest) => {
@@ -569,40 +553,30 @@ export default function QuestLog({ onNavigate }: { onNavigate?: (s: string) => v
                   <div className="space-y-2">
                     {selected.objectives.map((obj, i) => {
                       const done = getObjDone(selected, i);
-                      const isAuto = obj.check && obj.check.type !== 'manual'
-                        ? checkObjective(obj, prog, character ? { level: character.level } : null)
-                        : false;
                       const color = TYPE_COLORS[selected.type];
                       return (
                         <div key={i}
-                          onClick={() => toggleManual(selected, i)}
-                          className={`flex items-center gap-3 p-3 border transition-all ${!done && selected.status === 'active' && !isAuto ? 'cursor-pointer hover:border-white/15' : 'cursor-default'}`}
+                          className="flex items-center gap-3 p-3 border transition-all cursor-default"
                           style={{ borderColor: done ? color + '30' : '#ffffff08', backgroundColor: done ? color + '05' : 'transparent' }}>
 
-                          {/* Checkbox */}
-                          <div className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all ${done ? '' : 'opacity-50'}`}
+                          {/* Checkbox — отображение, не интерактивное */}
+                          <div className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 ${done ? '' : 'opacity-50'}`}
                             style={{ borderColor: done ? color : '#333', backgroundColor: done ? color + '25' : 'transparent' }}>
                             {done && <Icon name="Check" size={12} style={{ color }} />}
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <span className={`font-rajdhani text-sm ${done ? '' : 'text-gray-500'}`}
-                              style={{ color: done ? color : undefined, textDecoration: done ? 'none' : undefined }}>
+                              style={{ color: done ? color : undefined }}>
                               {obj.text}
                             </span>
                           </div>
 
-                          {/* Метка источника */}
-                          {done && isAuto && (
-                            <span className="font-mono text-[9px] flex-shrink-0" style={{ color: color + '80' }}>
-                              авто ✓
-                            </span>
-                          )}
-                          {done && !isAuto && (
-                            <span className="font-mono text-[9px] text-gray-600 flex-shrink-0">вручную ✓</span>
-                          )}
-                          {!done && !isAuto && selected.status === 'active' && obj.check?.type === 'manual' && (
-                            <span className="font-mono text-[9px] text-gray-700 flex-shrink-0">нажми</span>
+                          {/* Метка состояния */}
+                          {done ? (
+                            <span className="font-mono text-[9px] flex-shrink-0" style={{ color: color + '90' }}>авто ✓</span>
+                          ) : (
+                            <span className="font-mono text-[9px] text-gray-700 flex-shrink-0">в процессе</span>
                           )}
                         </div>
                       );

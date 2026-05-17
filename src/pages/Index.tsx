@@ -21,13 +21,16 @@ import NpcDialog from '@/components/NpcDialog';
 import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import BetaBanner from '@/components/BetaBanner';
 import QuestWatcher from '@/components/QuestWatcher';
+import { GAME_MODES, getModeState, getUnlockedModes } from '@/lib/gameModes';
 import { useGame } from '@/lib/GameContext';
+import { pushNotif } from '@/components/Notifications';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
 type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop' | 'notifications' | 'crafting' | 'achievements' | 'npc';
 
 export default function Index() {
   const { token, character, authLoading } = useGame();
+  const prog = useProgress();
   const [activeSection, setActiveSection] = useState<Section>('home');
   const [visible, setVisible] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -40,6 +43,19 @@ export default function Index() {
   }, [token, character?.id]);
 
   const navigate = (section: string) => {
+    // Проверка прогрессии: заблокированные мини-игры — недоступны
+    const unlocked = getUnlockedModes(prog, character ? { level: character.level } : null);
+    const mode = GAME_MODES.find(m => m.section === section);
+    if (mode && !unlocked.has(mode.id)) {
+      pushNotif({
+        type: 'system',
+        title: 'Режим заблокирован',
+        body: `Чтобы открыть «${mode.title}» — ${mode.requirement.toLowerCase()}`,
+        icon: '🔒',
+        color: '#ffaa00',
+      });
+      return;
+    }
     setVisible(false);
     setTimeout(() => {
       setActiveSection(section as Section);
@@ -171,17 +187,18 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
   ];
   const dailyDone = dailyTasks.filter(t => t.done).length;
 
-  const ACTIONS = [
-    { icon: '⚔️', title: 'Code Combat', desc: 'Пиши код — наноси урон NEXUS', color: '#ff00ff', section: 'battle' },
-    { icon: '📚', title: 'Уроки Python', desc: 'Теория, примеры, практика', color: '#00ff41', section: 'lessons' },
-    { icon: '🏰', title: 'Подземелья',   desc: 'Тесты, лут и XP', color: '#ffaa00', section: 'dungeon' },
-    { icon: '🗺️', title: 'Карта',        desc: 'Районы CodeGrid-9', color: '#00ffff', section: 'map' },
-    { icon: '📜', title: 'Квесты',        desc: 'Миссии Archive', color: '#00aaff', section: 'quests' },
-    { icon: '💬', title: 'Агенты',        desc: 'NPC: PYTH-0N, K4I', color: '#00ff41', section: 'npc' },
-    { icon: '🏆', title: 'Достижения',    desc: '18+ ачивок с наградами', color: '#ffff00', section: 'achievements' },
-    { icon: '🔨', title: 'Крафт',         desc: 'Создавай импланты', color: '#aa00ff', section: 'crafting' },
-    { icon: '🌑', title: 'Магазин',       desc: 'Лутбоксы и экипировка', color: '#aa00ff', section: 'shop' },
+  // Прогрессия мини-игр: следующие открываются по мере прохождения
+  const modeActions = GAME_MODES.map(mode => {
+    const state = getModeState(mode, prog, { level: character.level });
+    return { ...mode, unlocked: state.unlocked, nextHint: state.nextHint };
+  });
+  // Дополнительные секции (всегда доступны как навигация)
+  const navActions = [
+    { id: 'map', section: 'map', title: 'Карта', desc: 'Районы CodeGrid-9', icon: '🗺️', color: '#00ffff', unlocked: true, nextHint: undefined as string | undefined },
+    { id: 'quests', section: 'quests', title: 'Квесты', desc: 'Миссии Archive', icon: '📜', color: '#00aaff', unlocked: true, nextHint: undefined },
+    { id: 'achievements', section: 'achievements', title: 'Достижения', desc: 'Ачивки с наградами', icon: '🏆', color: '#ffff00', unlocked: true, nextHint: undefined },
   ];
+  const ACTIONS = [...modeActions, ...navActions];
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
@@ -272,20 +289,28 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {dailyTasks.map(t => (
-                  <button key={t.label} onClick={() => onNavigate(t.section)}
-                    className="flex flex-col items-center gap-1.5 p-2.5 border transition-all hover:scale-105"
-                    style={{
-                      borderColor: t.done ? t.color + '60' : '#1a1a1a',
-                      backgroundColor: t.done ? t.color + '10' : 'transparent',
-                    }}>
-                    <span className="text-xl">{t.icon}</span>
-                    <span className="font-mono text-[9px]" style={{ color: t.done ? t.color : '#444' }}>{t.label}</span>
-                    <div className="w-full h-0.5 bg-black/60">
-                      <div className="h-full transition-all" style={{ width: t.done ? '100%' : '0%', backgroundColor: t.color }} />
-                    </div>
-                  </button>
-                ))}
+                {dailyTasks.map(t => {
+                  const mode = modeActions.find(m => m.section === t.section);
+                  const locked = mode ? !mode.unlocked : false;
+                  return (
+                    <button key={t.label}
+                      onClick={() => !locked && onNavigate(t.section)}
+                      disabled={locked}
+                      className="flex flex-col items-center gap-1.5 p-2.5 border transition-all"
+                      style={{
+                        borderColor: t.done ? t.color + '60' : '#1a1a1a',
+                        backgroundColor: t.done ? t.color + '10' : 'transparent',
+                        opacity: locked ? 0.5 : 1,
+                        cursor: locked ? 'not-allowed' : 'pointer',
+                      }}>
+                      <span className="text-xl">{locked ? '🔒' : t.icon}</span>
+                      <span className="font-mono text-[9px]" style={{ color: t.done ? t.color : '#444' }}>{t.label}</span>
+                      <div className="w-full h-0.5 bg-black/60">
+                        <div className="h-full transition-all" style={{ width: t.done ? '100%' : '0%', backgroundColor: t.color }} />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -309,33 +334,55 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
 
         {/* ═══ QUICK ACTIONS GRID ═══ */}
         <div className="mb-2">
-          <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-4">// БЫСТРЫЕ ДЕЙСТВИЯ</div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-mono text-[10px] text-gray-600 tracking-widest">// РЕЖИМЫ ИГРЫ · ОТКРЫВАЮТСЯ ПО ПРОГРЕССУ</div>
+            <div className="font-mono text-[10px] text-cyber-green">
+              {modeActions.filter(m => m.unlocked).length}/{modeActions.length} открыто
+            </div>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {ACTIONS.map(item => (
-              <button key={item.section}
-                onClick={() => onNavigate(item.section)}
-                className="group flex flex-col items-start gap-2 p-4 border text-left transition-all hover:-translate-y-0.5"
-                style={{ borderColor: item.color + '20', backgroundColor: 'transparent' }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = item.color + '60';
-                  (e.currentTarget as HTMLElement).style.backgroundColor = item.color + '08';
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${item.color}12`;
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = item.color + '20';
-                  (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}>
-                <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
-                <div>
-                  <div className="font-orbitron text-xs font-black text-white">{item.title}</div>
-                  <div className="font-mono text-[9px] text-gray-600 mt-0.5">{item.desc}</div>
-                </div>
-                <div className="mt-auto font-mono text-[9px] transition-colors" style={{ color: item.color + '70' }}>
-                  → войти
-                </div>
-              </button>
-            ))}
+            {ACTIONS.map(item => {
+              const locked = !item.unlocked;
+              return (
+                <button key={item.section}
+                  onClick={() => !locked && onNavigate(item.section)}
+                  disabled={locked}
+                  className="group flex flex-col items-start gap-2 p-4 border text-left transition-all relative"
+                  style={{
+                    borderColor: locked ? '#222' : item.color + '20',
+                    backgroundColor: locked ? '#08090b' : 'transparent',
+                    opacity: locked ? 0.55 : 1,
+                    cursor: locked ? 'not-allowed' : 'pointer',
+                  }}
+                  onMouseEnter={e => {
+                    if (locked) return;
+                    (e.currentTarget as HTMLElement).style.borderColor = item.color + '60';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = item.color + '08';
+                    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${item.color}12`;
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={e => {
+                    if (locked) return;
+                    (e.currentTarget as HTMLElement).style.borderColor = item.color + '20';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  }}>
+                  <span className="text-2xl transition-transform" style={{ filter: locked ? 'grayscale(1)' : 'none' }}>
+                    {locked ? '🔒' : item.icon}
+                  </span>
+                  <div>
+                    <div className="font-orbitron text-xs font-black" style={{ color: locked ? '#666' : '#fff' }}>
+                      {item.title}
+                    </div>
+                    <div className="font-mono text-[9px] text-gray-600 mt-0.5">{item.desc}</div>
+                  </div>
+                  <div className="mt-auto font-mono text-[9px]" style={{ color: locked ? '#555' : item.color + '90' }}>
+                    {locked ? `▸ ${item.nextHint}` : '→ войти'}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
