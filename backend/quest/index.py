@@ -491,4 +491,92 @@ def handler(event: dict, context) -> dict:
             })
         return json_response({"leaderboard": leaders})
 
+    # faction_state — репутация игрока + глобальное влияние фракций
+    if action == "faction_state":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+
+        # репутация
+        cur.execute(
+            f"SELECT faction_id, reputation FROM {SCHEMA}.faction_reputation WHERE character_id=%s",
+            (char_id,)
+        )
+        my_rep = {r[0]: r[1] for r in cur.fetchall()}
+
+        # глобальное влияние
+        cur.execute(f"SELECT faction_id, total_influence FROM {SCHEMA}.faction_influence")
+        influence = {r[0]: r[1] for r in cur.fetchall()}
+
+        conn.close()
+
+        # три базовые фракции
+        for f in ("archive", "black_syntax", "order"):
+            my_rep.setdefault(f, 0)
+            influence.setdefault(f, 0)
+
+        return json_response({
+            "reputation": my_rep,
+            "influence":  influence,
+        })
+
+    # faction_gain — изменить репутацию игрока во фракции
+    if action == "faction_gain":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        faction_id = body.get("faction_id", "")
+        amount     = int(body.get("amount", 0))
+
+        if faction_id not in ("archive", "black_syntax", "order"):
+            return json_response({"error": "Неверная фракция"}, 400)
+        if amount == 0:
+            return json_response({"ok": True, "delta": 0})
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+
+        cur.execute(
+            f"INSERT INTO {SCHEMA}.faction_reputation (character_id, faction_id, reputation) "
+            f"VALUES (%s,%s,%s) "
+            f"ON CONFLICT (character_id, faction_id) "
+            f"DO UPDATE SET reputation = {SCHEMA}.faction_reputation.reputation + %s, updated_at=NOW() "
+            f"RETURNING reputation",
+            (char_id, faction_id, amount, amount)
+        )
+        new_rep = cur.fetchone()[0]
+
+        # обновляем глобальное влияние
+        cur.execute(
+            f"INSERT INTO {SCHEMA}.faction_influence (faction_id, total_influence) "
+            f"VALUES (%s,%s) "
+            f"ON CONFLICT (faction_id) "
+            f"DO UPDATE SET total_influence = {SCHEMA}.faction_influence.total_influence + %s, updated_at=NOW()",
+            (faction_id, amount, amount)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return json_response({
+            "ok": True,
+            "faction_id": faction_id,
+            "reputation": new_rep,
+            "delta": amount,
+        })
+
     return json_response({"error": "Not found"}, 404)

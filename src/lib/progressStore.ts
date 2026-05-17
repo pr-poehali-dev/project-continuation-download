@@ -172,6 +172,34 @@ export const progress = {
     const s = load();
     return s.questObjectives[questId]?.[idx] ?? false;
   },
+
+  /** Подтянуть прогресс с сервера и смержить с локальным */
+  mergeFromServer(server: {
+    lessons_completed?: number[];
+    battles_won?: number;
+    battles_streak_best?: number;
+    dungeons_completed?: string[];
+    dungeons_scores?: Record<string, number>;
+  }) {
+    const s = load();
+    const lessons = new Set<number>([...s.lessonsCompleted, ...(server.lessons_completed || [])]);
+    s.lessonsCompleted = Array.from(lessons);
+
+    const dungeons = new Set<string>([...s.dungeonsCompleted, ...(server.dungeons_completed || [])]);
+    s.dungeonsCompleted = Array.from(dungeons);
+
+    const scores = { ...s.dungeonsScores };
+    for (const [d, sc] of Object.entries(server.dungeons_scores || {})) {
+      scores[d] = Math.max(scores[d] ?? 0, sc);
+    }
+    s.dungeonsScores = scores;
+
+    s.battlesWon         = Math.max(s.battlesWon, server.battles_won ?? 0);
+    s.battlesStreakBest  = Math.max(s.battlesStreakBest, server.battles_streak_best ?? 0);
+
+    save(s);
+    _emit();
+  },
 };
 
 // ─── Event bus для реактивности ──────────────────────────────────────────────

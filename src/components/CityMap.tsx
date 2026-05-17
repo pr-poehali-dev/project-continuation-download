@@ -1,6 +1,63 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
+import { api } from '@/lib/api';
+import { pushNotif } from './Notifications';
+
+// ─── Корпорации (3 фракции с балансом сил) ───────────────────────────────────
+interface FactionMeta {
+  id: string;
+  name: string;
+  short: string;
+  color: string;
+  emoji: string;
+  motto: string;
+  desc: string;
+  rep_label: (rep: number) => string;
+  rep_color: (rep: number) => string;
+}
+
+const FACTIONS: FactionMeta[] = [
+  {
+    id: 'archive',
+    name: 'THE ARCHIVE',
+    short: 'Archive',
+    color: '#00ff41',
+    emoji: '📚',
+    motto: '"Знания — это свобода"',
+    desc: 'Подпольная академия. Учат Python, чтобы освободить город от NEXUS. Тебя сюда позвали с самого начала.',
+    rep_label: r => r >= 1000 ? 'ГЕРОЙ' : r >= 500 ? 'Союзник' : r >= 100 ? 'Друг' : r > 0 ? 'Новобранец' : r < 0 ? 'Враг' : 'Нейтрал',
+    rep_color: r => r >= 500 ? '#00ff41' : r > 0 ? '#88ff88' : r < 0 ? '#ff4060' : '#888',
+  },
+  {
+    id: 'black_syntax',
+    name: 'BLACK SYNTAX',
+    short: 'Black Syntax',
+    color: '#aa00ff',
+    emoji: '🕶️',
+    motto: '"Код решает всё"',
+    desc: 'Хакерский синдикат. Прагматики: важны не идеалы, а результат. Платят за рейды и взломы.',
+    rep_label: r => r >= 1000 ? 'ЛЕГЕНДА' : r >= 500 ? 'Свой' : r >= 100 ? 'Контакт' : r > 0 ? 'Знакомый' : r < 0 ? 'Цель' : 'Нейтрал',
+    rep_color: r => r >= 500 ? '#aa00ff' : r > 0 ? '#cc88ff' : r < 0 ? '#ff4060' : '#888',
+  },
+  {
+    id: 'order',
+    name: 'ORDER OF CLEAN CODE',
+    short: 'Order',
+    color: '#00aaff',
+    emoji: '⚖️',
+    motto: '"Элегантность — путь"',
+    desc: 'Секта чистого кода. Чтят паттерны и ООП. Помогают только тем, кто пишет красиво.',
+    rep_label: r => r >= 1000 ? 'МАСТЕР' : r >= 500 ? 'Ученик' : r >= 100 ? 'Новиций' : r > 0 ? 'Адепт' : r < 0 ? 'Еретик' : 'Нейтрал',
+    rep_color: r => r >= 500 ? '#00aaff' : r > 0 ? '#88ccff' : r < 0 ? '#ff4060' : '#888',
+  },
+];
+
+const FACTION_BY_NAME: Record<string, string> = {
+  'THE ARCHIVE': 'archive',
+  'BLACK SYNTAX': 'black_syntax',
+  'ORDER OF CLEAN CODE': 'order',
+};
 
 // ─── Типы ────────────────────────────────────────────────────────────────────
 
@@ -297,6 +354,40 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
   const [selected, setSelected] = useState<District | null>(null);
   const [filter, setFilter] = useState<District['type'] | 'all'>('all');
 
+  // ── Фракции: моя репутация + глобальное влияние ─────────────
+  const [reputation, setReputation] = useState<Record<string, number>>({ archive: 0, black_syntax: 0, order: 0 });
+  const [influence, setInfluence]   = useState<Record<string, number>>({ archive: 1000, black_syntax: 800, order: 700 });
+  const [factionLoading, setFactionLoading] = useState<string | null>(null);
+
+  const loadFactions = useCallback(async () => {
+    const res = await api.factionState();
+    if (res && !res.error) {
+      setReputation(res.reputation || {});
+      setInfluence(res.influence || {});
+    }
+  }, []);
+
+  useEffect(() => { loadFactions(); }, [loadFactions]);
+
+  const totalInfluence = Math.max(1, Object.values(influence).reduce((a, b) => a + b, 0));
+
+  const supportFaction = async (factionId: string) => {
+    setFactionLoading(factionId);
+    const res = await api.factionGain(factionId, 25);
+    setFactionLoading(null);
+    if (res && !res.error) {
+      const f = FACTIONS.find(x => x.id === factionId);
+      pushNotif({
+        type: 'quest',
+        title: `+25 репутации`,
+        body: `${f?.short ?? factionId} ценит твой вклад`,
+        icon: f?.emoji ?? '⭐',
+        color: f?.color ?? '#00ff41',
+      });
+      loadFactions();
+    }
+  };
+
   // Pan & zoom state
   const [pan, setPan] = useState({ x: -220, y: -80 });
   const [zoom, setZoom] = useState(0.72);
@@ -399,6 +490,71 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
                 {TYPE_META[t].icon}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* ── FACTION HUD ── */}
+        <div className="mb-4 border border-white/8 bg-black/40 p-4">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div>
+              <div className="font-mono text-[10px] text-gray-600 tracking-widest">// КОРПОРАЦИИ ГОРОДА · РЕПУТАЦИЯ И ВЛИЯНИЕ</div>
+              <div className="font-mono text-[9px] text-gray-700 mt-0.5">
+                Помогай фракции — её влияние растёт, открывается больше квестов и скидок
+              </div>
+            </div>
+            <button onClick={loadFactions}
+              className="font-mono text-[10px] px-2 py-1 border border-white/10 text-gray-500 hover:text-white transition-all">
+              <Icon name="RefreshCw" size={10} className="inline mr-1" />
+              обновить
+            </button>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {FACTIONS.map(f => {
+              const rep = reputation[f.id] ?? 0;
+              const inf = influence[f.id]   ?? 0;
+              const sharePct = Math.round((inf / totalInfluence) * 100);
+              const repLabel = f.rep_label(rep);
+              const repColor = f.rep_color(rep);
+              return (
+                <div key={f.id} className="border p-3 transition-all hover:translate-y-[-2px]"
+                  style={{ borderColor: f.color + '40', backgroundColor: f.color + '06' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">{f.emoji}</span>
+                    <div className="min-w-0">
+                      <div className="font-orbitron text-xs font-bold" style={{ color: f.color }}>{f.name}</div>
+                      <div className="font-mono text-[9px] text-gray-600 italic truncate">{f.motto}</div>
+                    </div>
+                  </div>
+                  {/* Моя репутация */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-mono text-[10px] text-gray-500">Моя репутация</span>
+                    <span className="font-orbitron text-xs font-black" style={{ color: repColor }}>
+                      {rep > 0 ? '+' : ''}{rep} · {repLabel}
+                    </span>
+                  </div>
+                  <div className="h-1 bg-black/60 mb-3 overflow-hidden">
+                    <div className="h-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, Math.abs(rep) / 10)}%`, backgroundColor: repColor }} />
+                  </div>
+                  {/* Глобальное влияние */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-mono text-[10px] text-gray-500">Контроль города</span>
+                    <span className="font-mono text-[10px]" style={{ color: f.color }}>{sharePct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-black/60 overflow-hidden mb-3">
+                    <div className="h-full transition-all duration-700"
+                      style={{ width: `${sharePct}%`, backgroundColor: f.color, boxShadow: `0 0 6px ${f.color}80` }} />
+                  </div>
+                  <button
+                    onClick={() => supportFaction(f.id)}
+                    disabled={factionLoading === f.id}
+                    className="w-full font-mono text-[10px] py-1.5 border transition-all disabled:opacity-50"
+                    style={{ borderColor: f.color + '50', color: f.color, backgroundColor: f.color + '08' }}>
+                    {factionLoading === f.id ? '...' : `+ ПОДДЕРЖАТЬ ${f.short.toUpperCase()}`}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -671,6 +827,38 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
                   <p className="text-gray-400 font-rajdhani text-sm leading-snug">{selected.lore}</p>
                 </div>
 
+                {/* Faction info */}
+                {(() => {
+                  const fid = FACTION_BY_NAME[selected.faction];
+                  if (!fid) return null;
+                  const f = FACTIONS.find(x => x.id === fid)!;
+                  const rep = reputation[fid] ?? 0;
+                  return (
+                    <div className="border p-3" style={{ borderColor: f.color + '40', backgroundColor: f.color + '06' }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span>{f.emoji}</span>
+                        <div className="flex-1">
+                          <div className="font-mono text-[9px] text-gray-500">// КОНТРОЛЬ РАЙОНА</div>
+                          <div className="font-orbitron text-xs font-bold" style={{ color: f.color }}>{f.name}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono text-[9px] text-gray-500">репутация</div>
+                          <div className="font-orbitron text-sm font-black" style={{ color: f.rep_color(rep) }}>
+                            {rep > 0 ? '+' : ''}{rep}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => supportFaction(fid)}
+                        disabled={factionLoading === fid}
+                        className="w-full font-mono text-[10px] py-1.5 border transition-all disabled:opacity-50"
+                        style={{ borderColor: f.color + '50', color: f.color, backgroundColor: f.color + '10' }}>
+                        {factionLoading === fid ? '...' : `+ ВЫПОЛНИТЬ ЗАДАНИЕ ${f.short.toUpperCase()}`}
+                      </button>
+                    </div>
+                  );
+                })()}
+
                 {/* Rewards */}
                 <div className="border border-cyber-yellow/20 bg-cyber-yellow/5 p-3">
                   <div className="font-mono text-[10px] text-gray-600 mb-1">// НАГРАДЫ</div>
@@ -742,19 +930,29 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
                 </div>
 
                 <div>
-                  <div className="font-mono text-[10px] text-gray-600 mb-2 tracking-widest">// ФРАКЦИИ</div>
+                  <div className="font-mono text-[10px] text-gray-600 mb-2 tracking-widest">// КОРПОРАЦИИ</div>
                   <div className="space-y-2">
-                    {[
-                      { name: 'THE ARCHIVE', color: '#00ff41', role: 'Сопротивление' },
-                      { name: 'NEXUS', color: '#ff4060', role: 'Корпорация' },
-                      { name: 'BLACK SYNTAX', color: '#aa00ff', role: 'Синдикат' },
-                      { name: 'ORDER OF CLEAN CODE', color: '#00aaff', role: 'Секта' },
-                    ].map(f => (
-                      <div key={f.name} className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[9px] leading-tight" style={{ color: f.color }}>{f.name}</span>
-                        <span className="font-mono text-[9px] text-gray-700 flex-shrink-0">{f.role}</span>
-                      </div>
-                    ))}
+                    {FACTIONS.map(f => {
+                      const rep = reputation[f.id] ?? 0;
+                      return (
+                        <div key={f.id} className="border p-2"
+                          style={{ borderColor: f.color + '25', backgroundColor: f.color + '05' }}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-orbitron text-[10px]" style={{ color: f.color }}>
+                              {f.emoji} {f.short}
+                            </span>
+                            <span className="font-mono text-[9px]" style={{ color: f.rep_color(rep) }}>
+                              {rep > 0 ? '+' : ''}{rep} · {f.rep_label(rep)}
+                            </span>
+                          </div>
+                          <div className="font-mono text-[9px] text-gray-600 mt-1 italic leading-snug">{f.motto}</div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span className="font-mono text-[9px] leading-tight text-red-400">NEXUS</span>
+                      <span className="font-mono text-[9px] text-gray-700 flex-shrink-0">Антагонист</span>
+                    </div>
                   </div>
                 </div>
 

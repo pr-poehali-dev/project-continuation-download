@@ -92,6 +92,13 @@ export const api = {
     call(URLS.quest, { action: "quest_claim", xp, coins }),
 
   leaderboard: () => call(URLS.quest, { action: "leaderboard" }),
+
+  progressSync: () => call(URLS.quest, { action: "progress_sync" }),
+
+  // Фракции
+  factionState: () => call(URLS.quest, { action: "faction_state" }),
+  factionGain: (faction_id: string, amount: number) =>
+    call(URLS.quest, { action: "faction_gain", faction_id, amount }),
 };
 
 // ─── Admin API (отдельная функция с двойной аутентификацией) ─────────────────

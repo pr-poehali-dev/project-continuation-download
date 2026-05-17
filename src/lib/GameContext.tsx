@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from './api';
+import { progress } from './progressStore';
 
 export interface Equipment {
   id: number;
@@ -152,6 +153,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (token) {
       refreshCharacter().finally(() => setAuthLoading(false));
+      // Подтягиваем прогресс с сервера и мерджим с локалкой
+      api.progressSync().then(res => {
+        if (res && !res.error) progress.mergeFromServer(res);
+      }).catch(() => {});
     } else {
       setAuthLoading(false);
     }
