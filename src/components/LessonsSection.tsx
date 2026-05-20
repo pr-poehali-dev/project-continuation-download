@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { usePyodide } from '@/lib/usePyodide';
 import { pushNotif } from '@/components/Notifications';
 import { progress } from '@/lib/progressStore';
+import { applyXpBonus } from '@/lib/implants';
 
 // ─── ТЕОРИЯ ──────────────────────────────────────────────────────────────────
 
@@ -730,7 +731,7 @@ export default function LessonsSection() {
       if (!res.already_completed) {
         applyXpResult(res as XpResult);
         setXpResult({ xp: res.xp_gained ?? xp, levelUp: res.leveled_up ?? false, newLevel: res.new_level ?? 1 });
-        progress.recordXp(res.xp_gained ?? xp);
+        progress.recordXp(applyXpBonus(res.xp_gained ?? xp, progress.get().implantsEquipped));
         if (res.leveled_up) {
           pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: '+5 HP, статы улучшены', icon: '⚡', color: '#00ff41' });
         }

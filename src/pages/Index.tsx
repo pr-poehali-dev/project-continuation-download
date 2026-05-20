@@ -22,6 +22,7 @@ import Flashcards from '@/components/Flashcards';
 import CodeStories from '@/components/CodeStories';
 import CodeBuilder from '@/components/CodeBuilder';
 import CodeWorkshop from '@/components/CodeWorkshop';
+import NextStepWidget from '@/components/NextStepWidget';
 import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import BetaBanner from '@/components/BetaBanner';
 import QuestWatcher from '@/components/QuestWatcher';
@@ -338,6 +339,11 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* ═══ NEXT STEP WIDGET ═══ */}
+        <div className="mb-6">
+          <NextStepWidget onNavigate={onNavigate} />
         </div>
 
         {/* ═══ QUICK ACTIONS GRID ═══ */}

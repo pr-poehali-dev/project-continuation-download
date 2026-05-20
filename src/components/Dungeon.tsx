@@ -4,6 +4,7 @@ import { useGame, XpResult } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
 import { progress } from '@/lib/progressStore';
+import { applyXpBonus } from '@/lib/implants';
 
 // ─── Данные подземелий ───────────────────────────────────────────────────────
 
@@ -303,7 +304,7 @@ export default function Dungeon() {
     setSavingResult(false);
     if (res && !res.error && res.xp_gained > 0) {
       applyXpResult(res as XpResult);
-      progress.recordXp(res.xp_gained ?? 0);
+      progress.recordXp(applyXpBonus(res.xp_gained ?? 0, progress.get().implantsEquipped));
       setDungeonReward({ xp: res.xp_gained, levelUp: res.leveled_up ?? false, newLevel: res.new_level ?? 1 });
       if (res.leveled_up) {
         pushNotif({ type: 'level', title: `LEVEL UP! → LVL ${res.new_level}`, body: 'Статы персонажа улучшены', icon: '⚡', color: '#00ff41' });

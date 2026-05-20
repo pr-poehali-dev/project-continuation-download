@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import Icon from '@/components/ui/icon';
 import { progress as progressStore } from '@/lib/progressStore';
 import { pushNotif } from '@/components/Notifications';
+import { applyXpBonus } from '@/lib/implants';
 
 interface Card {
   id: string;
@@ -96,8 +96,25 @@ export default function Flashcards() {
     if (!card) return;
     setKnown(prev => new Set(prev).add(card.id));
     setSessionStats(s => ({ ...s, right: s.right + 1 }));
-    progressStore.recordXp(10);
+    const equipped = progressStore.get().implantsEquipped;
+    progressStore.recordXp(applyXpBonus(10, equipped));
+    progressStore.recordFlashcardLearned(card.id);
     next();
+  };
+
+  const resetDeck = () => {
+    if (!deckId) return;
+    if (!confirm('Сбросить прогресс этой колоды? Карточки будут показаны заново.')) return;
+    const deckCards = CARDS.filter(c => c.deck === deckId).map(c => c.id);
+    setKnown(prev => {
+      const n = new Set(prev);
+      deckCards.forEach(id => n.delete(id));
+      return n;
+    });
+    progressStore.resetFlashcards(deckCards);
+    setIdx(0);
+    setFlipped(false);
+    pushNotif({ type: 'system', title: 'Колода сброшена', body: 'Прогресс обнулён, можно учить заново.', icon: '↻', color: '#00aaff' });
   };
   const markDontKnow = () => {
     setSessionStats(s => ({ ...s, wrong: s.wrong + 1 }));
@@ -196,7 +213,10 @@ export default function Flashcards() {
           <div className="font-mono text-xs" style={{ color: deckMeta.color }}>
             {deckMeta.icon} {deckMeta.title}
           </div>
-          <div className="font-mono text-xs text-gray-500">{idx + 1}/{deck.length}</div>
+          <div className="flex items-center gap-3">
+            <button onClick={resetDeck} className="font-mono text-[10px] text-yellow-400 hover:text-white" title="Сбросить прогресс колоды">↻ Сбросить</button>
+            <div className="font-mono text-xs text-gray-500">{idx + 1}/{deck.length}</div>
+          </div>
         </div>
 
         {/* Progress */}

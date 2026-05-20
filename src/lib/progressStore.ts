@@ -24,6 +24,12 @@ export interface ProgressState {
   questObjectives: Record<string, boolean[]>; // вручную отмеченные галочки
   totalXpEarned: number;
   sessionsCount: number;
+  // ─── Новые режимы обучения ───
+  flashcardsLearned: string[];        // id освоенных карточек
+  storiesCompleted: string[];         // id пройденных историй
+  buildersSolved: string[];           // id решённых задач конструктора
+  implantsCrafted: string[];          // id собранных имплантов
+  implantsEquipped: string[];         // активные импланты (макс 3)
 }
 
 const DEFAULT: ProgressState = {
@@ -44,6 +50,11 @@ const DEFAULT: ProgressState = {
   questObjectives: {},
   totalXpEarned: 0,
   sessionsCount: 0,
+  flashcardsLearned: [],
+  storiesCompleted: [],
+  buildersSolved: [],
+  implantsCrafted: [],
+  implantsEquipped: [],
 };
 
 function today(): string {
@@ -72,11 +83,22 @@ function resetDailyIfNeeded(state: ProgressState): ProgressState {
   return state;
 }
 
+// ─── Кэш снапшота для useSyncExternalStore ───
+// Должен возвращать одинаковую ссылку до тех пор, пока не вызван _emit().
+let _cachedSnapshot: ProgressState | null = null;
+function getSnapshot(): ProgressState {
+  if (!_cachedSnapshot) _cachedSnapshot = resetDailyIfNeeded(load());
+  return _cachedSnapshot;
+}
+function invalidateSnapshot() {
+  _cachedSnapshot = null;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export const progress = {
   get(): ProgressState {
-    return resetDailyIfNeeded(load());
+    return getSnapshot();
   },
 
   recordLessonComplete(lessonId: number) {
@@ -160,6 +182,68 @@ export const progress = {
     save(s);
   },
 
+  // ─── Новые режимы обучения ───
+  recordFlashcardLearned(cardId: string) {
+    const s = load();
+    if (!s.flashcardsLearned.includes(cardId)) {
+      s.flashcardsLearned.push(cardId);
+      save(s);
+      _emit();
+    }
+  },
+
+  resetFlashcards(deckIds?: string[]) {
+    const s = load();
+    if (!deckIds) s.flashcardsLearned = [];
+    else s.flashcardsLearned = s.flashcardsLearned.filter(id => !deckIds.some(d => id.startsWith(d)));
+    save(s);
+    _emit();
+  },
+
+  recordStoryComplete(storyId: string) {
+    const s = load();
+    if (!s.storiesCompleted.includes(storyId)) {
+      s.storiesCompleted.push(storyId);
+      save(s);
+      _emit();
+    }
+  },
+
+  recordBuilderSolved(puzzleId: string) {
+    const s = load();
+    if (!s.buildersSolved.includes(puzzleId)) {
+      s.buildersSolved.push(puzzleId);
+      save(s);
+      _emit();
+    }
+  },
+
+  recordImplantCrafted(implantId: string) {
+    const s = load();
+    if (!s.implantsCrafted.includes(implantId)) {
+      s.implantsCrafted.push(implantId);
+      save(s);
+      _emit();
+    }
+  },
+
+  toggleImplantEquipped(implantId: string, maxSlots = 3): { ok: boolean; reason?: string } {
+    const s = load();
+    const equipped = new Set(s.implantsEquipped);
+    if (equipped.has(implantId)) {
+      equipped.delete(implantId);
+    } else {
+      if (equipped.size >= maxSlots) {
+        return { ok: false, reason: `Заняты все ${maxSlots} слота. Сначала сними имплант.` };
+      }
+      equipped.add(implantId);
+    }
+    s.implantsEquipped = Array.from(equipped);
+    save(s);
+    _emit();
+    return { ok: true };
+  },
+
   setQuestObjective(questId: string, idx: number, done: boolean) {
     const s = load();
     if (!s.questObjectives[questId]) s.questObjectives[questId] = [];
@@ -207,6 +291,7 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 
 function _emit() {
+  invalidateSnapshot();
   listeners.forEach(fn => fn());
 }
 

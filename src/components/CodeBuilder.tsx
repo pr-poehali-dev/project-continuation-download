@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { progress as progressStore } from '@/lib/progressStore';
 import { pushNotif } from '@/components/Notifications';
+import { applyXpBonus } from '@/lib/implants';
 
 interface Block {
   id: string;       // уникальный (для перетаскивания)
@@ -158,11 +159,14 @@ export default function CodeBuilder() {
         const next = [...solved, puzzle.id];
         setSolved(next);
         localStorage.setItem('builder_solved', JSON.stringify(next));
-        progressStore.recordXp(puzzle.xp);
+        const equipped = progressStore.get().implantsEquipped;
+        const finalXp = applyXpBonus(puzzle.xp, equipped);
+        progressStore.recordXp(finalXp);
+        progressStore.recordBuilderSolved(puzzle.id);
         pushNotif({
           type: 'system',
           title: `Задача "${puzzle.title}" решена!`,
-          body: `+${puzzle.xp} XP`,
+          body: `+${finalXp} XP${finalXp !== puzzle.xp ? ' (имплант)' : ''}`,
           icon: '🧩',
           color: '#00ff41',
         });

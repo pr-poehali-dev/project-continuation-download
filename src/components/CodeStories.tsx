@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { progress as progressStore } from '@/lib/progressStore';
 import { pushNotif } from '@/components/Notifications';
+import { checkSingleLine } from '@/lib/codeCheck';
+import { applyXpBonus } from '@/lib/implants';
 
 interface Scene {
   speaker: string;
@@ -149,11 +151,14 @@ export default function CodeStories() {
       const next = [...completed, story.id];
       setCompleted(next);
       localStorage.setItem('stories_done', JSON.stringify(next));
-      progressStore.recordXp(story.reward);
+      const equipped = progressStore.get().implantsEquipped;
+      const finalXp = applyXpBonus(story.reward, equipped);
+      progressStore.recordXp(finalXp);
+      progressStore.recordStoryComplete(story.id);
       pushNotif({
         type: 'system',
         title: `История "${story.title}" завершена!`,
-        body: `+${story.reward} XP`,
+        body: `+${finalXp} XP${finalXp !== story.reward ? ' (имплант)' : ''}`,
         icon: '📖',
         color: '#00aaff',
       });
@@ -165,10 +170,9 @@ export default function CodeStories() {
     if (!story) return;
     const sc = story.scenes[sceneIdx];
     if (sc.task) {
-      const userAns = input.trim().toLowerCase().replace(/\s+/g, ' ');
-      const ok = sc.task.answers.some(a => userAns === a.toLowerCase().replace(/\s+/g, ' '));
+      const ok = checkSingleLine(input, sc.task.answers);
       if (!ok) {
-        setError('Не совсем. Подумай ещё или включи подсказку.');
+        setError('Не совсем. Проверь синтаксис или включи подсказку.');
         return;
       }
       setError('');

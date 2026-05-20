@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
 import { generateTaskChain, BattleTask } from '@/lib/battleTasks';
 import { progress } from '@/lib/progressStore';
+import { applyXpBonus } from '@/lib/implants';
 
 // GDD Enemies
 const ENEMIES = [
@@ -264,7 +265,7 @@ export default function BattleSystem() {
     if (result && !result.error) {
       applyXpResult(result as XpResult);
       setWinReward(result as XpResult);
-      progress.recordXp(result.xp_gained ?? 0);
+      progress.recordXp(applyXpBonus(result.xp_gained ?? 0, progress.get().implantsEquipped));
       if (result.leveled_up) {
         pushNotif({ type: 'level', title: `LEVEL UP! → ${result.new_level}`, body: 'Статы персонажа увеличены!', icon: '⚡', color: '#00ff41' });
       }
