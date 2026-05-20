@@ -18,6 +18,10 @@ import NotificationCenter, { ToastContainer } from '@/components/Notifications';
 import Crafting from '@/components/Crafting';
 import Achievements from '@/components/Achievements';
 import NpcDialog from '@/components/NpcDialog';
+import Flashcards from '@/components/Flashcards';
+import CodeStories from '@/components/CodeStories';
+import CodeBuilder from '@/components/CodeBuilder';
+import CodeWorkshop from '@/components/CodeWorkshop';
 import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import BetaBanner from '@/components/BetaBanner';
 import QuestWatcher from '@/components/QuestWatcher';
@@ -26,7 +30,7 @@ import { useGame } from '@/lib/GameContext';
 import { pushNotif } from '@/components/Notifications';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register';
-type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop' | 'notifications' | 'crafting' | 'achievements' | 'npc';
+type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop' | 'notifications' | 'crafting' | 'achievements' | 'npc' | 'flashcards' | 'stories' | 'builder' | 'workshop';
 
 export default function Index() {
   const { token, character, authLoading } = useGame();
@@ -139,6 +143,10 @@ export default function Index() {
         {activeSection === 'crafting' && <Crafting />}
         {activeSection === 'achievements' && <Achievements />}
         {activeSection === 'npc' && <NpcDialog />}
+        {activeSection === 'flashcards' && <Flashcards />}
+        {activeSection === 'stories' && <CodeStories />}
+        {activeSection === 'builder' && <CodeBuilder />}
+        {activeSection === 'workshop' && <CodeWorkshop />}
       </main>
       <ToastContainer />
       <QuestWatcher />

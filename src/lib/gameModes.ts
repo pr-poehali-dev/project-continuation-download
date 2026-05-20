@@ -26,82 +26,85 @@ export interface GameMode {
 }
 
 export const GAME_MODES: GameMode[] = [
-  // 1. Уроки — открыты сразу (база обучения)
+  // 1. Уроки — основа, открыты сразу
   {
-    id: 'lessons',
-    section: 'lessons',
-    title: 'Уроки Python',
-    desc: 'Теория, примеры, практика',
-    icon: '📚',
-    color: '#00ff41',
-    order: 1,
+    id: 'lessons', section: 'lessons',
+    title: 'Уроки Python', desc: 'Теория и практика — 15 шагов',
+    icon: '📚', color: '#00ff41', order: 1,
     requirement: 'Открыто с начала',
     check: () => true,
   },
-
-  // 2. NPC — открыты сразу (часть стартового сюжета)
+  // 2. NPC — наставники, открыты сразу
   {
-    id: 'npc',
-    section: 'npc',
-    title: 'Агенты',
-    desc: 'Поговори с PYTH-0N и K4I',
-    icon: '💬',
-    color: '#00aaff',
-    order: 2,
+    id: 'npc', section: 'npc',
+    title: 'Агенты', desc: 'PYTH-0N и K4I подскажут путь',
+    icon: '💬', color: '#00aaff', order: 2,
     requirement: 'Открыто с начала',
     check: () => true,
   },
-
-  // 3. Code Combat — после первого урока
+  // 3. Карточки — лёгкое запоминание после первого урока
   {
-    id: 'battle',
-    section: 'battle',
-    title: 'Code Combat',
-    desc: 'Пиши код — побеждай врагов',
-    icon: '⚔️',
-    color: '#ff00ff',
-    order: 3,
+    id: 'flashcards', section: 'flashcards',
+    title: 'Карточки', desc: 'Запоминай термины через ассоциации',
+    icon: '🎴', color: '#00ff41', order: 3,
     requirement: 'Пройди 1 урок',
     check: prog => prog.lessonsCompleted.length >= 1,
   },
-
-  // 4. Магазин — после первой победы (есть на что тратить)
+  // 4. Конструктор — собирать программы без печати
   {
-    id: 'shop',
-    section: 'shop',
-    title: 'Магазин',
-    desc: 'Лутбоксы и экипировка',
-    icon: '🌑',
-    color: '#aa00ff',
-    order: 4,
+    id: 'builder', section: 'builder',
+    title: 'Конструктор', desc: 'Собирай код из блоков',
+    icon: '🧩', color: '#ff00ff', order: 4,
+    requirement: 'Пройди 2 урока',
+    check: prog => prog.lessonsCompleted.length >= 2,
+  },
+  // 5. Сториз — обучение через сюжет
+  {
+    id: 'stories', section: 'stories',
+    title: 'Код-Сториз', desc: 'Учись через истории и диалоги',
+    icon: '📖', color: '#00aaff', order: 5,
+    requirement: 'Пройди 3 урока',
+    check: prog => prog.lessonsCompleted.length >= 3,
+  },
+  // 6. Battle — практика под давлением
+  {
+    id: 'battle', section: 'battle',
+    title: 'Code Combat', desc: 'Пиши код — побеждай врагов',
+    icon: '⚔️', color: '#ff00ff', order: 6,
+    requirement: 'Пройди 3 урока',
+    check: prog => prog.lessonsCompleted.length >= 3,
+  },
+  // 7. Магазин — после первой победы
+  {
+    id: 'shop', section: 'shop',
+    title: 'Магазин', desc: 'Лутбоксы и экипировка',
+    icon: '🌑', color: '#aa00ff', order: 7,
     requirement: 'Выиграй 1 бой',
     check: prog => prog.battlesWon >= 1,
   },
-
-  // 5. Подземелья — после 3 уроков и 2 побед
+  // 8. Подземелья — испытания
   {
-    id: 'dungeon',
-    section: 'dungeon',
-    title: 'Подземелья',
-    desc: 'Тесты на знание Python',
-    icon: '🏰',
-    color: '#ffaa00',
-    order: 5,
-    requirement: 'Пройди 3 урока и 2 боя',
-    check: prog => prog.lessonsCompleted.length >= 3 && prog.battlesWon >= 2,
+    id: 'dungeon', section: 'dungeon',
+    title: 'Подземелья', desc: 'Тесты на знание Python',
+    icon: '🏰', color: '#ffaa00', order: 8,
+    requirement: 'Пройди 5 уроков и 2 боя',
+    check: prog => prog.lessonsCompleted.length >= 5 && prog.battlesWon >= 2,
   },
-
-  // 6. Крафт — после первого данжа (нужны ресурсы)
+  // 9. Мастерская — код-крафт имплантов
   {
-    id: 'crafting',
-    section: 'crafting',
-    title: 'Крафт',
-    desc: 'Создавай импланты',
-    icon: '🔨',
-    color: '#aa00ff',
-    order: 6,
+    id: 'workshop', section: 'workshop',
+    title: 'Мастерская', desc: 'Пиши функции — собирай импланты',
+    icon: '🔨', color: '#aa00ff', order: 9,
     requirement: 'Пройди 1 подземелье',
     check: prog => prog.dungeonsCompleted.length >= 1,
+  },
+  // 10. Крафт ресурсами — финальный режим
+  {
+    id: 'crafting', section: 'crafting',
+    title: 'Крафт ресурсами', desc: 'Создавай предметы из материалов',
+    icon: '🧰', color: '#ffaa00', order: 10,
+    requirement: 'Достигни 5 уровня',
+    check: (_prog, ch) => (ch?.level ?? 0) >= 5,
   },
 ];
 
