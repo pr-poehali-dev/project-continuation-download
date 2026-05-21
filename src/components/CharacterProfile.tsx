@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame, InventoryItem } from '@/lib/GameContext';
 import { api } from '@/lib/api';
-import CharacterAvatar3D from '@/components/CharacterAvatar3D';
+import EquipmentBadges from '@/components/EquipmentBadges';
 
 const RARITY_COLORS: Record<string, string> = {
   common: '#aaaaaa', uncommon: '#00ff41', rare: '#00aaff', epic: '#aa00ff', legendary: '#ffaa00',
@@ -64,6 +64,7 @@ export default function CharacterProfile() {
   if (!character) return null;
 
   const charColor = CLASS_COLOR[character.class] || '#00ff41';
+  const charImg   = CLASS_IMG[character.class]   || CLASS_IMG.cipher;
   const xpPct     = Math.round((character.xp / character.xp_to_next) * 100);
   const hpPct     = Math.round((character.hp / character.max_hp) * 100);
 
@@ -125,12 +126,41 @@ export default function CharacterProfile() {
           {/* ══ LEFT: Portrait + bars ══ */}
           <div className="flex flex-col gap-4">
 
-            {/* Portrait — 3D силуэт с экипировкой */}
-            <div className="relative w-full max-w-[280px] mx-auto"
-              style={{
-                boxShadow: `0 0 40px ${glowColor}20, 0 0 80px ${glowColor}08`,
-              }}>
-              <CharacterAvatar3D accentColor={charColor} showName />
+            {/* Portrait */}
+            <div className="relative">
+              <div
+                className="w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden border-2 relative"
+                style={{
+                  borderColor: glowColor + '80',
+                  boxShadow: `0 0 40px ${glowColor}20, 0 0 80px ${glowColor}08`,
+                  clipPath: 'polygon(0 0, 92% 0, 100% 8%, 100% 100%, 8% 100%, 0 92%)',
+                  backgroundColor: '#050a0e',
+                }}
+              >
+                <img
+                  src={charImg}
+                  alt={character.name}
+                  className="w-full h-full object-cover object-top"
+                />
+                <div className="absolute inset-0" style={{
+                  background: `linear-gradient(to top, rgba(5,10,14,0.95) 0%, rgba(5,10,14,0.4) 35%, transparent 60%)`
+                }} />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="font-orbitron text-white text-lg font-black leading-tight drop-shadow-lg">
+                    {character.name}
+                  </div>
+                  <div className="font-mono text-xs mt-0.5" style={{ color: charColor }}>
+                    {CLASS_LABEL[character.class] ?? character.class.toUpperCase()}
+                  </div>
+                </div>
+                <div
+                  className="absolute top-3 right-3 px-2.5 py-1 font-orbitron text-xs font-black border"
+                  style={{ color: charColor, borderColor: charColor, backgroundColor: '#050a0ecc', boxShadow: `0 0 10px ${charColor}30` }}
+                >
+                  LVL {character.level}
+                </div>
+                <EquipmentBadges size="lg" />
+              </div>
             </div>
 
             {/* HP / XP bars */}

@@ -23,7 +23,7 @@ import CodeStories from '@/components/CodeStories';
 import CodeBuilder from '@/components/CodeBuilder';
 import CodeWorkshop from '@/components/CodeWorkshop';
 import NextStepWidget from '@/components/NextStepWidget';
-import CharacterAvatar3D from '@/components/CharacterAvatar3D';
+import EquipmentBadges from '@/components/EquipmentBadges';
 import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import BetaBanner from '@/components/BetaBanner';
 import QuestWatcher from '@/components/QuestWatcher';
@@ -181,7 +181,12 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
     cipher: '#00ff41', data_ghost: '#00aaff', neural_architect: '#aa00ff',
     hacker: '#00ff41', netrunner: '#00aaff', street_samurai: '#aa00ff',
   };
+  const classLabel: Record<string, string> = {
+    cipher: 'CIPHER', data_ghost: 'DATA GHOST', neural_architect: 'NEURAL ARCHITECT',
+    hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
+  };
   const charColor = classColor[character.class] || '#00ff41';
+  const charImg   = CLASS_IMG_HOME[character.class] || CLASS_IMG_HOME.cipher;
   const xpPct = Math.round((character.xp / character.xp_to_next) * 100);
   const hpPct = Math.round((character.hp / character.max_hp) * 100);
 
@@ -218,10 +223,32 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
         {/* ═══ TOP HERO SECTION ═══ */}
         <div className="flex flex-col lg:flex-row items-stretch gap-6 mb-8">
 
-          {/* Left: Character card — 3D силуэт с экипировкой */}
-          <div className="relative flex-shrink-0 w-full lg:w-64"
-            style={{ boxShadow: `0 0 60px ${charColor}15, 0 0 120px ${charColor}06` }}>
-            <CharacterAvatar3D accentColor={charColor} showName />
+          {/* Left: Character card */}
+          <div className="relative flex-shrink-0 w-full lg:w-64">
+            <div className="relative overflow-hidden border-2 w-full"
+              style={{
+                borderColor: charColor + '60',
+                boxShadow: `0 0 60px ${charColor}15, 0 0 120px ${charColor}06`,
+                clipPath: 'polygon(0 0, 92% 0, 100% 8%, 100% 100%, 8% 100%, 0 92%)',
+                aspectRatio: '3/4',
+                backgroundColor: '#050a0e',
+              }}>
+              <img src={charImg} alt={character.name}
+                className="w-full h-full object-cover object-top" />
+              <div className="absolute inset-0"
+                style={{ background: 'linear-gradient(to top, rgba(5,10,14,0.96) 0%, rgba(5,10,14,0.2) 40%, transparent 65%)' }} />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="font-orbitron text-xl font-black text-white drop-shadow-lg">{character.name}</div>
+                <div className="font-mono text-xs mt-0.5" style={{ color: charColor }}>
+                  {classLabel[character.class] ?? character.class.toUpperCase()}
+                </div>
+              </div>
+              <div className="absolute top-3 left-3 px-2 py-0.5 font-orbitron text-xs border"
+                style={{ color: charColor, borderColor: charColor + '80', backgroundColor: '#050a0ecc' }}>
+                LVL {character.level}
+              </div>
+              <EquipmentBadges />
+            </div>
           </div>
 
           {/* Right: Stats + Daily */}
