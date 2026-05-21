@@ -71,6 +71,28 @@ export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistric
     isDragging.current = false;
   }, []);
 
+  // ── Touch pan (мобильные) ─────────────────────────────────────
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    isDragging.current = true;
+    didDrag.current = false;
+    dragStart.current = { x: t.clientX, y: t.clientY, panX: pan.x, panY: pan.y };
+  }, [pan]);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - dragStart.current.x;
+    const dy = t.clientY - dragStart.current.y;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) didDrag.current = true;
+    setPan({ x: dragStart.current.panX + dx, y: dragStart.current.panY + dy });
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
   // ── Wheel zoom ───────────────────────────────────────────────
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -141,9 +163,8 @@ export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistric
       {/* ── Map wrapper ── */}
       <div
         ref={wrapperRef}
-        className="border border-cyber-cyan/15 relative overflow-hidden"
+        className="border border-cyber-cyan/15 relative overflow-hidden h-[460px] sm:h-[560px] lg:h-[720px]"
         style={{
-          height: '720px',
           cursor: isDragging.current ? 'grabbing' : 'grab',
           background: 'radial-gradient(ellipse at center, #0a121a 0%, #050a0e 70%, #02050a 100%)',
         }}
@@ -151,6 +172,9 @@ export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistric
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         onWheel={onWheel}
       >
         {/* CSS-grid фон поверх SVG для глубины */}

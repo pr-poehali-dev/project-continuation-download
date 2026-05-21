@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
 import { pushNotif } from './Notifications';
 import { progress } from '@/lib/progressStore';
+import { useGainXp } from '@/lib/useGainXp';
 
 // ─── Данные ──────────────────────────────────────────────────────────────────
 
@@ -159,6 +160,7 @@ const RECIPES: Recipe[] = [
 export default function Crafting() {
   const { character } = useGame();
   const playerLevel = character?.level || 1;
+  const gainXp = useGainXp();
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe>(RECIPES[0]);
   const [materials, setMaterials] = useState<Material[]>(MATERIALS);
@@ -202,10 +204,14 @@ export default function Crafting() {
           setCrafting(null);
           setCraftProgress(0);
           progress.recordCraft();
+          // Награда XP за крафт зависит от редкости
+          const xpByRarity: Record<string, number> = { common: 30, rare: 60, epic: 120, legendary: 200 };
+          const xpReward = xpByRarity[r.rarity] || 30;
+          gainXp('craft', xpReward, Math.floor(xpReward / 3));
           pushNotif({
             type: 'item',
             title: `Скрафчено: ${r.name}`,
-            body: `${RARITY_META[r.rarity].label} предмет добавлен в инвентарь`,
+            body: `${RARITY_META[r.rarity].label} предмет · +${xpReward} XP`,
             icon: r.icon,
             color: RARITY_META[r.rarity].color,
           });

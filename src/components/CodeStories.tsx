@@ -3,6 +3,7 @@ import { progress as progressStore } from '@/lib/progressStore';
 import { pushNotif } from '@/components/Notifications';
 import { checkSingleLine } from '@/lib/codeCheck';
 import { applyXpBonus } from '@/lib/implants';
+import { useGainXp } from '@/lib/useGainXp';
 
 interface Scene {
   speaker: string;
@@ -134,6 +135,7 @@ export default function CodeStories() {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
   const [showHint, setShowHint] = useState(false);
+  const gainXp = useGainXp();
 
   const story = STORIES.find(s => s.id === storyId);
 
@@ -153,7 +155,7 @@ export default function CodeStories() {
       localStorage.setItem('stories_done', JSON.stringify(next));
       const equipped = progressStore.get().implantsEquipped;
       const finalXp = applyXpBonus(story.reward, equipped);
-      progressStore.recordXp(finalXp);
+      gainXp('story', finalXp, Math.floor(finalXp / 4));
       progressStore.recordStoryComplete(story.id);
       pushNotif({
         type: 'system',

@@ -468,7 +468,7 @@ def handler(event: dict, context) -> dict:
         cur.execute(f"""
             SELECT u.username, c.level, c.xp, c.class, c.current_chapter,
                    u.id,
-                   (SELECT COUNT(*) FROM {SCHEMA}.battles b WHERE b.user_id = u.id AND b.result = 'win') as wins
+                   (SELECT COUNT(*) FROM {SCHEMA}.battles b WHERE b.character_id = c.id AND b.result = 'win') as wins
             FROM {SCHEMA}.users u
             JOIN {SCHEMA}.characters c ON c.user_id = u.id
             ORDER BY c.xp DESC, c.level DESC
@@ -490,6 +490,104 @@ def handler(event: dict, context) -> dict:
                 "wins":    r[6] or 0,
             })
         return json_response({"leaderboard": leaders})
+
+    # gain_xp — универсальный сейв XP/Creds для режимов без своего обработчика
+    # (карточки, конструктор, сториз, мастерская, крафт)
+    if action == "gain_xp":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        xp_reward    = int(body.get("xp", 0))
+        coins_reward = int(body.get("coins", 0))
+        reason       = body.get("reason", "generic")
+
+        # Защита от абуза: ограничиваем разумными пределами
+        if xp_reward < 0 or coins_reward < 0:
+            return json_response({"error": "Отрицательные значения недопустимы"}, 400)
+        if xp_reward > 500 or coins_reward > 300:
+            return json_response({"error": "Слишком большая награда"}, 400)
+        if xp_reward == 0 and coins_reward == 0:
+            return json_response({"ok": True, "xp_gained": 0, "coins_gained": 0})
+
+        conn = get_conn()
+        cur  = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+        result = award_xp(cur, char_id, xp_reward, coins_reward)
+        conn.commit()
+        conn.close()
+        return json_response({**result, "ok": True, "reason": reason})
+
+    # progress_sync — подтянуть прогресс с сервера для синхронизации с localStorage
+    if action == "progress_sync":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        conn = get_conn()
+        cur = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+
+        # Пройденные уроки
+        cur.execute(
+            f"SELECT lesson_id FROM {SCHEMA}.lesson_progress "
+            f"WHERE character_id=%s AND completed=true",
+            (char_id,)
+        )
+        lessons_completed = [int(r[0]) for r in cur.fetchall()]
+
+        # Пройденные данжи + лучшие результаты
+        cur.execute(
+            f"SELECT dungeon_id, best_score FROM {SCHEMA}.dungeon_progress "
+            f"WHERE character_id=%s",
+            (char_id,)
+        )
+        dungeons_data = cur.fetchall()
+        dungeons_completed = [r[0] for r in dungeons_data]
+        dungeons_scores = {r[0]: int(r[1] or 0) for r in dungeons_data}
+
+        # Победы в боях + лучшая серия
+        cur.execute(
+            f"SELECT COUNT(*) FROM {SCHEMA}.battles "
+            f"WHERE character_id=%s AND result='win'",
+            (char_id,)
+        )
+        battles_won = int(cur.fetchone()[0] or 0)
+
+        # Лучшая серия побед (последовательные win-ы)
+        cur.execute(
+            f"SELECT result FROM {SCHEMA}.battles "
+            f"WHERE character_id=%s ORDER BY played_at ASC",
+            (char_id,)
+        )
+        results = [r[0] for r in cur.fetchall()]
+        best_streak = 0
+        current_streak = 0
+        for r in results:
+            if r == 'win':
+                current_streak += 1
+                if current_streak > best_streak:
+                    best_streak = current_streak
+            else:
+                current_streak = 0
+
+        conn.close()
+
+        return json_response({
+            "lessons_completed":   lessons_completed,
+            "battles_won":         battles_won,
+            "battles_streak_best": best_streak,
+            "dungeons_completed":  dungeons_completed,
+            "dungeons_scores":     dungeons_scores,
+        })
 
     # faction_state — репутация игрока + глобальное влияние фракций
     if action == "faction_state":

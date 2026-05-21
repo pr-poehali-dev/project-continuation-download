@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { progress as progressStore } from '@/lib/progressStore';
 import { pushNotif } from '@/components/Notifications';
 import { applyXpBonus } from '@/lib/implants';
+import { useGainXp } from '@/lib/useGainXp';
 
 interface Block {
   id: string;       // уникальный (для перетаскивания)
@@ -102,6 +103,7 @@ export default function CodeBuilder() {
   const [solved, setSolved] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('builder_solved') || '[]'); } catch { return []; }
   });
+  const gainXp = useGainXp();
 
   const puzzle = PUZZLES.find(p => p.id === puzzleId);
 
@@ -161,7 +163,7 @@ export default function CodeBuilder() {
         localStorage.setItem('builder_solved', JSON.stringify(next));
         const equipped = progressStore.get().implantsEquipped;
         const finalXp = applyXpBonus(puzzle.xp, equipped);
-        progressStore.recordXp(finalXp);
+        gainXp('builder', finalXp, Math.floor(finalXp / 4));
         progressStore.recordBuilderSolved(puzzle.id);
         pushNotif({
           type: 'system',

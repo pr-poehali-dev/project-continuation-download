@@ -91,6 +91,11 @@ export const api = {
   questClaim: (xp: number, coins: number) =>
     call(URLS.quest, { action: "quest_claim", xp, coins }),
 
+  /** Универсальная награда XP+Creds — для режимов без своего обработчика
+   *  (карточки, конструктор, сториз, мастерская, крафт). */
+  gainXp: (reason: string, xp: number, coins: number = 0) =>
+    call(URLS.quest, { action: "gain_xp", reason, xp, coins }),
+
   leaderboard: () => call(URLS.quest, { action: "leaderboard" }),
 
   progressSync: () => call(URLS.quest, { action: "progress_sync" }),

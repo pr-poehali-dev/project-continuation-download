@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame, XpResult } from '@/lib/GameContext';
 import { api } from '@/lib/api';
@@ -19,10 +19,7 @@ export default function DialogEngine({ npc, onClose }: DialogEngineProps) {
   const [rewards, setRewards] = useState<{ xp: number; creds: number; items: string[] }>({ xp: 0, creds: 0, items: [] });
   const [rewardSent, setRewardSent] = useState(false);
 
-  // Записываем NPC в прогресс при первом открытии диалога
-  useEffect(() => {
-    progress.recordNpcSpoken(npc.id);
-  }, [npc.id]);
+  // NPC засчитывается для квестов только когда дошли до конца диалога
 
   const node = npc.dialog.find(n => n.id === nodeId)!;
   const currentLine = node.lines[lineIdx];
@@ -50,6 +47,8 @@ export default function DialogEngine({ npc, onClose }: DialogEngineProps) {
     const next = npc.dialog.find(n => n.id === choice.nextId);
     if (next?.end) {
       setFinished(true);
+      // Записываем диалог в прогресс — только когда дошли до конца
+      progress.recordNpcSpoken(npc.id);
       // Выдаём накопленные награды на сервер (один раз)
       if (!rewardSent && (newRewards.xp > 0 || newRewards.creds > 0)) {
         setRewardSent(true);

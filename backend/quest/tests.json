@@ -8,6 +8,46 @@
       "expectedStatus": 401,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "progress_sync unauthenticated",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "progress_sync"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "faction_state unauthenticated",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "faction_state"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "leaderboard public",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "leaderboard"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Unknown action returns 404",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "definitely_not_an_action"},
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
     }
   ]
 }

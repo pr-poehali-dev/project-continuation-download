@@ -4,6 +4,7 @@ import { useGame } from '@/lib/GameContext';
 import { progress as progressStore } from '@/lib/progressStore';
 import { pushNotif } from '@/components/Notifications';
 import { applyXpBonus } from '@/lib/implants';
+import { useGainXp } from '@/lib/useGainXp';
 import { CARDS, DECKS, type DeckId, type Card, getDuelOptions } from '@/data/flashcardsData';
 
 type Mode = 'classic' | 'time' | 'duel' | 'srs';
@@ -225,6 +226,7 @@ function ClassicMode({ deckId, onExit, known, setKnown, onFinish }: {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [stats, setStats] = useState({ right: 0, wrong: 0, xp: 0 });
+  const gainXp = useGainXp();
 
   const card = deck[idx];
   if (!card) {
@@ -238,7 +240,7 @@ function ClassicMode({ deckId, onExit, known, setKnown, onFinish }: {
   const markKnow = () => {
     setKnown(new Set(known).add(card.id));
     const xp = xpFor();
-    progressStore.recordXp(xp);
+    gainXp('flashcard_classic', xp);
     progressStore.recordFlashcardLearned(card.id);
     setStats(s => ({ right: s.right + 1, wrong: s.wrong, xp: s.xp + xp }));
     setFlipped(false);
@@ -280,6 +282,7 @@ function TimeMode({ deckId, onExit, known, setKnown, onFinish }: {
   const [stats, setStats] = useState({ right: 0, wrong: 0, xp: 0 });
   const [timeLeft, setTimeLeft] = useState(10);
   const card = deck[idx];
+  const gainXp = useGainXp();
 
   // таймер
   useEffect(() => {
@@ -313,7 +316,7 @@ function TimeMode({ deckId, onExit, known, setKnown, onFinish }: {
   const handleKnow = () => {
     const baseXp = applyXpBonus(15, progressStore.get().implantsEquipped);
     const xp = Math.round(baseXp * multiplier);
-    progressStore.recordXp(xp);
+    gainXp('flashcard_time', xp);
     progressStore.recordFlashcardLearned(card.id);
     setKnown(new Set(known).add(card.id));
     setStreak(s => s + 1);
@@ -381,6 +384,7 @@ function DuelMode({ deckId, onExit, known, setKnown, onFinish }: {
   const [stats, setStats] = useState({ right: 0, wrong: 0, xp: 0 });
   const card = deck[idx];
   const options = useMemo(() => card ? getDuelOptions(card) : [], [card?.id]);
+  const gainXp = useGainXp();
 
   if (!card || hp <= 0) {
     return (
@@ -399,7 +403,7 @@ function DuelMode({ deckId, onExit, known, setKnown, onFinish }: {
     const correct = options[i].correct;
     if (correct) {
       const xp = applyXpBonus(20, progressStore.get().implantsEquipped);
-      progressStore.recordXp(xp);
+      gainXp('flashcard_duel', xp);
       progressStore.recordFlashcardLearned(card.id);
       setKnown(new Set(known).add(card.id));
       setStats(s => ({ right: s.right + 1, wrong: s.wrong, xp: s.xp + xp }));
@@ -482,6 +486,7 @@ function SrsMode({ srs, setSrs, known, setKnown, onExit, onFinish }: {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [stats, setStats] = useState({ right: 0, wrong: 0, xp: 0 });
+  const gainXp = useGainXp();
 
   const card = dueList[idx];
   if (!card) {
@@ -516,7 +521,7 @@ function SrsMode({ srs, setSrs, known, setKnown, onExit, onFinish }: {
     let xpGained = 0;
     if (rating >= 2) {
       xpGained = applyXpBonus(rating === 3 ? 15 : 10, progressStore.get().implantsEquipped);
-      progressStore.recordXp(xpGained);
+      gainXp('flashcard_srs', xpGained);
       progressStore.recordFlashcardLearned(card.id);
       setKnown(new Set(known).add(card.id));
       setStats(s => ({ right: s.right + 1, wrong: s.wrong, xp: s.xp + xpGained }));

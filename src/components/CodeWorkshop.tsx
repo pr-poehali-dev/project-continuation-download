@@ -5,6 +5,7 @@ import { pushNotif } from '@/components/Notifications';
 import { applyXpBonus } from '@/lib/implants';
 import { checkStructure, type StructureCheck } from '@/lib/codeCheck';
 import { IMPLANTS as IMPLANT_DEFS } from '@/lib/implants';
+import { useGainXp } from '@/lib/useGainXp';
 
 interface ImplantTask {
   spec: string;
@@ -97,6 +98,7 @@ export default function CodeWorkshop() {
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [showExample, setShowExample] = useState(false);
   const [showEquipped, setShowEquipped] = useState(false);
+  const gainXp = useGainXp();
 
   const implant = selectedId ? IMPLANT_DEFS.find(i => i.id === selectedId) : null;
   const task = selectedId ? TASKS[selectedId] : null;
@@ -118,7 +120,7 @@ export default function CodeWorkshop() {
     if (!prog.implantsCrafted.includes(implant.id)) {
       progressStore.recordImplantCrafted(implant.id);
       const finalXp = applyXpBonus(implant.xp, prog.implantsEquipped);
-      progressStore.recordXp(finalXp);
+      gainXp('workshop', finalXp, Math.floor(finalXp / 5));
       pushNotif({
         type: 'system',
         title: `Имплант "${implant.name}" создан!`,
