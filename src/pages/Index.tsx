@@ -238,18 +238,12 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
   ];
   const dailyDone = dailyTasks.filter(t => t.done).length;
 
-  // Прогрессия мини-игр: следующие открываются по мере прохождения
+  // Прогрессия мини-игр: считаем сколько открыто (для бейджа на карте)
   const modeActions = GAME_MODES.map(mode => {
     const state = getModeState(mode, prog, { level: character.level });
     return { ...mode, unlocked: state.unlocked, nextHint: state.nextHint };
   });
-  // Дополнительные секции (всегда доступны как навигация)
-  const navActions = [
-    { id: 'map', section: 'map', title: 'Карта', desc: 'Районы CodeGrid-9', icon: '🗺️', color: '#00ffff', unlocked: true, nextHint: undefined as string | undefined },
-    { id: 'quests', section: 'quests', title: 'Квесты', desc: 'Миссии Archive', icon: '📜', color: '#00aaff', unlocked: true, nextHint: undefined },
-    { id: 'achievements', section: 'achievements', title: 'Достижения', desc: 'Ачивки с наградами', icon: '🏆', color: '#ffff00', unlocked: true, nextHint: undefined },
-  ];
-  const ACTIONS = [...modeActions, ...navActions];
+  const unlockedCount = modeActions.filter(m => m.unlocked).length;
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
@@ -389,58 +383,69 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
           <NextStepWidget onNavigate={onNavigate} />
         </div>
 
-        {/* ═══ QUICK ACTIONS GRID ═══ */}
-        <div className="mb-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="font-mono text-[10px] text-gray-600 tracking-widest">// РЕЖИМЫ ИГРЫ · ОТКРЫВАЮТСЯ ПО ПРОГРЕССУ</div>
-            <div className="font-mono text-[10px] text-cyber-green">
-              {modeActions.filter(m => m.unlocked).length}/{modeActions.length} открыто
+        {/* ═══ CITY MAP PROMO — главный портал в режимы ═══ */}
+        <button onClick={() => onNavigate('map')}
+          className="w-full mb-6 group relative overflow-hidden border-2 transition-all text-left hover:-translate-y-0.5"
+          style={{
+            borderColor: '#00aaff60',
+            backgroundColor: '#00aaff08',
+            boxShadow: '0 0 30px #00aaff15',
+          }}>
+          <div className="absolute inset-0 cyber-grid opacity-20 pointer-events-none" />
+          <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none"
+            style={{ backgroundColor: '#00aaff' }} />
+          <div className="relative z-10 p-5 lg:p-6 flex items-center gap-5">
+            <div className="text-5xl lg:text-6xl flex-shrink-0">🗺️</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-mono text-[10px] text-cyan-300/60 tracking-widest mb-1">
+                // ВЕСЬ ГОРОД · ВСЕ РЕЖИМЫ
+              </div>
+              <h2 className="font-orbitron text-xl lg:text-2xl font-black text-white mb-1">
+                ОТКРЫТЬ <span className="text-cyber-cyan">КАРТУ CODEGRID-9</span>
+              </h2>
+              <p className="font-rajdhani text-sm text-gray-400 leading-snug max-w-xl">
+                Уроки, бои, NPC, карточки, конструктор, подземелья — каждый режим живёт в своём районе.
+                Кликай по карте чтобы перейти.
+              </p>
+              <div className="mt-2 flex items-center gap-3 font-mono text-[10px]">
+                <span className="text-cyber-green">⬢ {unlockedCount}/{GAME_MODES.length} режимов открыто</span>
+                <span className="text-gray-600">·</span>
+                <span className="text-cyber-cyan">→ войти</span>
+              </div>
+            </div>
+            <div className="hidden sm:flex flex-col items-end gap-1 text-right">
+              <div className="font-orbitron text-3xl font-black text-cyber-cyan">{unlockedCount}</div>
+              <div className="font-mono text-[9px] text-gray-500">из {GAME_MODES.length} режимов</div>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {ACTIONS.map(item => {
-              const locked = !item.unlocked;
-              return (
-                <button key={item.section}
-                  onClick={() => !locked && onNavigate(item.section)}
-                  disabled={locked}
-                  className="group flex flex-col items-start gap-2 p-4 border text-left transition-all relative"
-                  style={{
-                    borderColor: locked ? '#222' : item.color + '20',
-                    backgroundColor: locked ? '#08090b' : 'transparent',
-                    opacity: locked ? 0.55 : 1,
-                    cursor: locked ? 'not-allowed' : 'pointer',
-                  }}
-                  onMouseEnter={e => {
-                    if (locked) return;
-                    (e.currentTarget as HTMLElement).style.borderColor = item.color + '60';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = item.color + '08';
-                    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${item.color}12`;
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={e => {
-                    if (locked) return;
-                    (e.currentTarget as HTMLElement).style.borderColor = item.color + '20';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  }}>
-                  <span className="text-2xl transition-transform" style={{ filter: locked ? 'grayscale(1)' : 'none' }}>
-                    {locked ? '🔒' : item.icon}
-                  </span>
-                  <div>
-                    <div className="font-orbitron text-xs font-black" style={{ color: locked ? '#666' : '#fff' }}>
-                      {item.title}
-                    </div>
-                    <div className="font-mono text-[9px] text-gray-600 mt-0.5">{item.desc}</div>
-                  </div>
-                  <div className="mt-auto font-mono text-[9px]" style={{ color: locked ? '#555' : item.color + '90' }}>
-                    {locked ? `▸ ${item.nextHint}` : '→ войти'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        </button>
+
+        {/* ═══ БЫСТРЫЕ ССЫЛКИ — только то, что не дублирует карту ═══ */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { section: 'quests',       title: 'Квесты',      desc: 'Сюжет и побочки',  icon: '📜', color: '#00aaff' },
+            { section: 'achievements', title: 'Достижения', desc: 'Ачивки с наградами', icon: '🏆', color: '#ffff00' },
+            { section: 'shop',         title: 'Магазин',    desc: 'Лутбоксы, импланты', icon: '🌑', color: '#aa00ff' },
+            { section: 'profile',      title: 'Профиль',    desc: 'Инвентарь, статы',   icon: '👤', color: '#00ff41' },
+          ].map(item => (
+            <button key={item.section} onClick={() => onNavigate(item.section)}
+              className="group flex flex-col items-start gap-2 p-4 border transition-all hover:-translate-y-0.5 text-left"
+              style={{ borderColor: item.color + '25' }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = item.color + '60';
+                (e.currentTarget as HTMLElement).style.backgroundColor = item.color + '08';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = item.color + '25';
+                (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+              }}>
+              <span className="text-2xl">{item.icon}</span>
+              <div>
+                <div className="font-orbitron text-xs font-black text-white">{item.title}</div>
+                <div className="font-mono text-[9px] text-gray-600 mt-0.5">{item.desc}</div>
+              </div>
+            </button>
+          ))}
         </div>
 
       </div>

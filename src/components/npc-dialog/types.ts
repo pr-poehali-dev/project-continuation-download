@@ -263,4 +263,279 @@ export const NPCS: NPC[] = [
       },
     ],
   },
+
+  // ─── VERA ─────────────────────────────────────────────────────
+  {
+    id: 'vera',
+    name: 'VERA',
+    title: 'Инженер The Archive',
+    faction: 'THE ARCHIVE',
+    factionColor: '#00ff41',
+    icon: '👩‍🔧',
+    portrait: '👩‍🔧',
+    location: 'Function Factory',
+    desc: 'Главный инженер Archive. Знает каждый сервер и каждый протокол. Без неё Undernet не работает.',
+    unlockLevel: 3,
+    dialog: [
+      {
+        id: 'start',
+        lines: [
+          { speaker: 'npc', text: 'А, новенький. Ghost мне о тебе рассказывал. Говорил — толковый.' },
+          { speaker: 'npc', text: 'Я VERA. Инженер. Пока остальные машут кодом как мечом — я строю мосты, по которым этот код бежит.' },
+          { speaker: 'player', text: 'Чем ты занимаешься?' },
+          { speaker: 'npc', text: 'Поддерживаю инфраструктуру. Сервера, прокси, шифрование. Если завтра NEXUS вырубит наш канал — это я подниму резервный за 3 минуты.' },
+        ],
+        choices: [
+          { text: 'Расскажи про функции', nextId: 'about_functions' },
+          { text: 'Как стать инженером?', nextId: 'how_engineer' },
+          { text: 'Чем я могу помочь?', nextId: 'help' },
+        ],
+      },
+      {
+        id: 'about_functions',
+        lines: [
+          { speaker: 'npc', text: 'Функция — это контракт. Ты даёшь ей данные на вход — она обещает что-то вернуть. И всё.' },
+          { speaker: 'npc', text: 'Хорошая функция делает ОДНО дело. Если у тебя в def на 50 строк — это не функция, это монолог. Разрежь.' },
+          { speaker: 'player', text: 'А когда писать функции?' },
+          { speaker: 'npc', text: 'Если копипастишь код второй раз — пора. Если третий — ты уже опоздала. То есть опоздал. // VERA не очень умеет в гендеры.' },
+        ],
+        choices: [
+          { text: 'Понял. Пойду пробовать.', nextId: 'farewell', reward: { xp: 80 } },
+          { text: 'Чем я могу помочь?', nextId: 'help' },
+        ],
+      },
+      {
+        id: 'how_engineer',
+        lines: [
+          { speaker: 'npc', text: 'Хочешь как я? Учись думать ленью. Лучший код — тот, который ты не написал.' },
+          { speaker: 'npc', text: 'Изучи: функции, модули, файлы, исключения. Потом — try/except, with, декораторы. Это инструменты, без которых ты — кодер, но не инженер.' },
+        ],
+        choices: [
+          { text: 'Дай мне задание', nextId: 'help' },
+          { text: 'Я учусь.', nextId: 'farewell', reward: { xp: 60 } },
+        ],
+      },
+      {
+        id: 'help',
+        lines: [
+          { speaker: 'npc', text: 'Хорошо. Нужно перехватить сигнал на Function Factory. Пройди подземелье, выбей у NEXUS-инженера схему.' },
+          { speaker: 'npc', text: 'Когда принесёшь — я научу тебя писать декораторы. Это контракты к контрактам. Метакод.' },
+          { speaker: 'player', text: 'Звучит интересно. Я в деле.' },
+        ],
+        choices: [
+          { text: 'Принято. Иду на задание.', nextId: 'farewell', reward: { xp: 150, creds: 75 } },
+        ],
+      },
+      {
+        id: 'farewell',
+        lines: [{ speaker: 'npc', text: 'Удачи. И помни — `import this`. // VERA вернулась к консоли' }],
+        end: true,
+      },
+    ],
+  },
+
+  // ─── ECHO ─────────────────────────────────────────────────────
+  {
+    id: 'echo',
+    name: 'ECHO',
+    title: 'Юный хакер',
+    faction: 'THE ARCHIVE',
+    factionColor: '#00ff41',
+    icon: '🎧',
+    portrait: '🎧',
+    location: 'Syntax Street',
+    desc: 'Сирота из трущоб, попала к Archive в 14. Лучший аналитик данных в своём поколении. Считает Python первым языком, который её понял.',
+    unlockLevel: 5,
+    dialog: [
+      {
+        id: 'start',
+        lines: [
+          { speaker: 'npc', text: 'Эй! Тс-с, не так громко. Я тут отлаживаю один скрипт, NEXUS снифит трафик.' },
+          { speaker: 'npc', text: 'Я ECHO. Аналитик. Те, кто старше — таскают пушки и пишут эксплойты. А я смотрю на данные и говорю им, КУДА стрелять.' },
+        ],
+        choices: [
+          { text: 'Чем занимаешься?', nextId: 'what_do' },
+          { text: 'Расскажи о данных', nextId: 'data_talk' },
+          { text: 'Дай совет новичку', nextId: 'advice' },
+        ],
+      },
+      {
+        id: 'what_do',
+        lines: [
+          { speaker: 'npc', text: 'Анализирую перехваты NEXUS. Логины, маршруты дронов, расписания патрулей.' },
+          { speaker: 'npc', text: 'Каждое число — кусок паззла. Сам по себе бесполезен. Но сложи 10000 — и увидишь как у корпорации болит спина.' },
+          { speaker: 'player', text: 'Это python?' },
+          { speaker: 'npc', text: 'Конечно. pandas, numpy, чуть-чуть matplotlib для отчётов. Если тебе нравятся данные — приходи учиться. Я не кусаюсь.' },
+        ],
+        choices: [
+          { text: 'Может быть, позже.', nextId: 'farewell', reward: { xp: 50 } },
+          { text: 'Расскажи про структуры данных', nextId: 'data_talk' },
+        ],
+      },
+      {
+        id: 'data_talk',
+        lines: [
+          { speaker: 'npc', text: 'Список — это коробка. Словарь — каталог. Множество — фильтр. Кортеж — печать.' },
+          { speaker: 'npc', text: 'Запомни: выбираешь не "что красивее", а "что подходит задаче". Нужна скорость поиска — set. Связи ключ-значение — dict. Порядок и доступ по индексу — list.' },
+          { speaker: 'player', text: 'А кортеж?' },
+          { speaker: 'npc', text: 'Когда хочешь сказать: "это НЕ должно меняться". Например, координаты, RGB-цвет, ключи словаря.' },
+        ],
+        choices: [
+          { text: 'Спасибо, ECHO!', nextId: 'farewell', reward: { xp: 100 } },
+        ],
+      },
+      {
+        id: 'advice',
+        lines: [
+          { speaker: 'npc', text: 'Совет? Окей, слушай. Никогда не пиши код, в котором не уверен. Если сомневаешься — открой repl, попробуй.' },
+          { speaker: 'npc', text: 'Python прощает многое. NEXUS — не прощает ничего. Так что лучше ошибаться у себя на машине, чем в продакшене у The Archive.' },
+        ],
+        choices: [
+          { text: 'Принято.', nextId: 'farewell', reward: { xp: 75 } },
+        ],
+      },
+      {
+        id: 'farewell',
+        lines: [{ speaker: 'npc', text: 'Удачи. И береги свой стек. // ECHO в наушниках' }],
+        end: true,
+      },
+    ],
+  },
+
+  // ─── SIGMA ────────────────────────────────────────────────────
+  {
+    id: 'sigma',
+    name: 'SIGMA',
+    title: 'Наёмница Black Syntax',
+    faction: 'BLACK SYNTAX',
+    factionColor: '#aa00ff',
+    icon: '🕷️',
+    portrait: '🕷️',
+    location: 'Data Docks',
+    desc: 'Лучшая наёмница Black Syntax. Не верит в идеалы — только в контракты и деньги. Уважает тех, кто пишет лаконичный код.',
+    unlockLevel: 8,
+    dialog: [
+      {
+        id: 'start',
+        lines: [
+          { speaker: 'npc', text: 'Стой. Ты пахнешь Archive — за версту чую. Расслабься, я не убиваю гостей. Это плохо для бизнеса.' },
+          { speaker: 'npc', text: 'SIGMA. Black Syntax. Мне всё равно во что ты веришь — пока ты платишь и не предаёшь.' },
+        ],
+        choices: [
+          { text: 'У вас есть контракты?', nextId: 'contracts' },
+          { text: 'Что Black Syntax думает про Archive?', nextId: 'about_archive' },
+          { text: 'Расскажи о boj-стиле кода', nextId: 'code_style' },
+        ],
+      },
+      {
+        id: 'contracts',
+        lines: [
+          { speaker: 'npc', text: 'Есть. Перехват грузового конвоя NEXUS. Награда — 200 Creds + дроп. Условия: тихо, быстро, без свидетелей.' },
+          { speaker: 'npc', text: 'Можешь отказаться. Archive не одобрит, но Black Syntax платит лучше идеалов.' },
+          { speaker: 'player', text: 'Я подумаю.' },
+        ],
+        choices: [
+          { text: 'Беру контракт.', nextId: 'farewell', reward: { xp: 200, creds: 100 } },
+          { text: 'Не сейчас.', nextId: 'about_archive' },
+        ],
+      },
+      {
+        id: 'about_archive',
+        lines: [
+          { speaker: 'npc', text: 'Archive? Романтики. Верят, что свобода кода = свобода всех. Наивно.' },
+          { speaker: 'npc', text: 'Мы реалисты. Если NEXUS падёт — кто-то займёт их место. Лучше пусть это будем мы — те, кто умеет монетизировать хаос.' },
+          { speaker: 'player', text: 'Жёстко.' },
+          { speaker: 'npc', text: 'Жизнь жёстче. Но мы тоже не любим NEXUS — они монополисты, а монополии давят рынок. Так что иногда наши интересы совпадают.' },
+        ],
+        choices: [
+          { text: 'Понял позицию.', nextId: 'farewell', reward: { xp: 80 } },
+        ],
+      },
+      {
+        id: 'code_style',
+        lines: [
+          { speaker: 'npc', text: 'Black Syntax уважает короткий код. Lambda, comprehensions, magic methods.' },
+          { speaker: 'npc', text: 'Если задачу можно решить в одну строку — решай в одну. Длинный код — это лишний риск. NEXUS-сканеры читают паттерны: чем больше строк, тем выше шанс палева.' },
+          { speaker: 'player', text: 'А читаемость?' },
+          { speaker: 'npc', text: 'Читаемость для тех, кто планирует жить долго. У нас другая профессия.' },
+        ],
+        choices: [
+          { text: 'Любопытная философия.', nextId: 'farewell', reward: { xp: 100 } },
+        ],
+      },
+      {
+        id: 'farewell',
+        lines: [{ speaker: 'npc', text: 'Если передумаешь — найди меня здесь. Контракты не ждут. // SIGMA отключилась' }],
+        end: true,
+      },
+    ],
+  },
+
+  // ─── BROTHER LAMBDA ───────────────────────────────────────────
+  {
+    id: 'brother_lambda',
+    name: 'Брат Лямбда',
+    title: 'Монах Order of Clean Code',
+    faction: 'ORDER OF CLEAN CODE',
+    factionColor: '#00aaff',
+    icon: '🧘',
+    portrait: '🧘',
+    location: 'Temple of Clean Code',
+    desc: 'Старейший монах Ордена. Верит, что Python — священный язык, ниспосланный людям. Категорически осуждает спагетти-код.',
+    unlockLevel: 12,
+    dialog: [
+      {
+        id: 'start',
+        lines: [
+          { speaker: 'npc', text: 'Мир тебе, путник. Ты вошёл в храм. Сними обувь, не сними — это иллюзия. Главное — сними плохие привычки.' },
+          { speaker: 'npc', text: 'Я брат Лямбда. Учитель здесь. Учу одному: код должен быть прекрасен. Прекрасен — значит понятен. Понятен — значит правильный.' },
+        ],
+        choices: [
+          { text: 'Что такое "чистый код"?', nextId: 'clean_code' },
+          { text: 'Расскажи об ООП', nextId: 'oop_lecture' },
+          { text: 'Дай мне испытание', nextId: 'trial' },
+        ],
+      },
+      {
+        id: 'clean_code',
+        lines: [
+          { speaker: 'npc', text: 'Чистый код — это код, который ты понимаешь через год. Без комментариев. Без объяснений.' },
+          { speaker: 'npc', text: 'Имена переменных рассказывают историю. Функции делают одно дело. Классы инкапсулируют смысл. Это не правила — это путь.' },
+          { speaker: 'player', text: 'А если код работает, но некрасив?' },
+          { speaker: 'npc', text: 'Тогда он работает временно. Любой код, который ты не можешь прочесть — это бомба замедленного действия. И она взорвётся в самый неудобный момент.' },
+        ],
+        choices: [
+          { text: 'Я понял путь.', nextId: 'farewell', reward: { xp: 120 } },
+          { text: 'Расскажи об ООП', nextId: 'oop_lecture' },
+        ],
+      },
+      {
+        id: 'oop_lecture',
+        lines: [
+          { speaker: 'npc', text: 'ООП — это способ моделировать реальность. Объект — это сущность с состоянием и поведением.' },
+          { speaker: 'npc', text: 'Четыре столпа: инкапсуляция, наследование, полиморфизм, абстракция. Каждый — урок. Каждый — путь.' },
+          { speaker: 'player', text: 'А когда НЕ использовать ООП?' },
+          { speaker: 'npc', text: 'Когда задача — это просто функция. Не каждая программа должна быть собором. Иногда хижины достаточно. // Брат Лямбда улыбается.' },
+        ],
+        choices: [
+          { text: 'Мудро. Спасибо.', nextId: 'farewell', reward: { xp: 150 } },
+        ],
+      },
+      {
+        id: 'trial',
+        lines: [
+          { speaker: 'npc', text: 'Хорошо. Испытание простое: возьми любую свою функцию длиннее 20 строк. Разбей её на три меньших. Каждая — одно дело.' },
+          { speaker: 'npc', text: 'Когда сделаешь — вернись. Я научу тебя @property и магическим методам. Это танец между формой и сутью.' },
+        ],
+        choices: [
+          { text: 'Принимаю испытание.', nextId: 'farewell', reward: { xp: 200, creds: 50 } },
+        ],
+      },
+      {
+        id: 'farewell',
+        lines: [{ speaker: 'npc', text: '`import this`. Дзен внутри. // Брат Лямбда возвращается к медитации' }],
+        end: true,
+      },
+    ],
+  },
 ];

@@ -7,6 +7,7 @@ import { usePyodide } from '@/lib/usePyodide';
 import { pushNotif } from '@/components/Notifications';
 import { progress } from '@/lib/progressStore';
 import { applyXpBonus } from '@/lib/implants';
+import { EXTRA_LESSONS } from '@/data/extraLessons';
 
 // ─── ТЕОРИЯ ──────────────────────────────────────────────────────────────────
 
@@ -461,6 +462,8 @@ k4i = EliteAgent("K4I", "Hacker", 99, "ULTRA")
 print(k4i.status())`,
     note: 'super().__init__() вызывает конструктор родителя. Классы — PascalCase: AgentProfile.',
   },
+  // ─── +20 дополнительных уроков из extraLessons.ts ────────────────────────
+  ...EXTRA_LESSONS,
 ];
 
 // ─── МИССИИ ──────────────────────────────────────────────────────────────────
