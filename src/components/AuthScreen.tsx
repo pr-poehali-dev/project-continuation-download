@@ -31,7 +31,7 @@ export default function AuthScreen({ mode, onSwitch, onBack }: Props) {
     }
   };
 
-  const accent = mode === 'login' ? '#00ffff' : '#ff00ff';
+  const accent = mode === 'login' ? '#00ffff' : '#00ff41';
   const isLogin = mode === 'login';
 
   return (
@@ -62,22 +62,31 @@ export default function AuthScreen({ mode, onSwitch, onBack }: Props) {
       {/* Body */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-md">
-          {/* Title */}
-          <div className="text-center mb-8">
-            <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-2">
-              {isLogin ? '// ИДЕНТИФИКАЦИЯ АГЕНТА' : '// РЕГИСТРАЦИЯ НОВОГО АГЕНТА'}
+          {/* Terminal title */}
+          <div className="mb-6">
+            <div className="font-mono text-[11px] mb-2" style={{ color: accent + 'aa' }}>
+              <span className="animate-pulse">▮</span> ARCHIVE.SECURE_LOGIN
             </div>
-            <h1 className="font-orbitron text-3xl font-black text-white mb-1">
-              {isLogin ? 'ВХОД В' : 'СОЗДАТЬ'}{' '}
+            <div className="font-orbitron text-xl font-black text-white mb-1">
+              {isLogin ? 'ВОССТАНОВЛЕНИЕ' : 'СОЗДАНИЕ'}{' '}
               <span style={{ color: accent }}>
-                {isLogin ? 'СИСТЕМУ' : 'АККАУНТ'}
+                {isLogin ? 'СВЯЗИ' : 'ПРОФИЛЯ АГЕНТА'}
               </span>
-            </h1>
-            <p className="text-gray-600 font-rajdhani text-sm mt-2">
+            </div>
+            <div className="font-mono text-[10px] text-gray-600">
               {isLogin
-                ? 'The Archive ждёт тебя. Введи свои данные.'
-                : 'Присоединяйся к сопротивлению. CodeGrid-9, 2087.'}
-            </p>
+                ? '> handshake_resume(): жду твой ключ доступа...'
+                : '> handshake_init(): сеть готова принять нового агента'}
+            </div>
+          </div>
+
+          {/* Encryption status bar */}
+          <div className="mb-4 flex items-center justify-between px-3 py-2 border border-white/5 bg-black/40 font-mono text-[10px]">
+            <span className="text-gray-700">STATUS</span>
+            <span className="flex items-center gap-2" style={{ color: accent }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: accent }} />
+              ENCRYPTED · TOR · 7 HOPS
+            </span>
           </div>
 
           {/* Form */}
@@ -87,7 +96,7 @@ export default function AuthScreen({ mode, onSwitch, onBack }: Props) {
           >
             {!isLogin && (
               <CField
-                label="ИМЯ АГЕНТА"
+                label="> codename:"
                 placeholder="Nova_7"
                 value={form.username}
                 onChange={v => set('username', v)}
@@ -97,7 +106,7 @@ export default function AuthScreen({ mode, onSwitch, onBack }: Props) {
             )}
             {!isLogin && (
               <CField
-                label="EMAIL"
+                label="> commlink:"
                 placeholder="agent@archive.net"
                 value={form.email}
                 onChange={v => set('email', v)}
@@ -106,16 +115,18 @@ export default function AuthScreen({ mode, onSwitch, onBack }: Props) {
                 type="email"
               />
             )}
+            {isLogin && (
+              <CField
+                label="> codename / commlink:"
+                placeholder="agent@archive.net"
+                value={form.login}
+                onChange={v => set('login', v)}
+                accent={accent}
+                icon="Terminal"
+              />
+            )}
             <CField
-              label={isLogin ? 'ЛОГИН ИЛИ EMAIL' : 'ЛОГИН'}
-              placeholder={isLogin ? 'agent@archive.net' : 'nova_7'}
-              value={isLogin ? form.login : form.username}
-              onChange={v => set(isLogin ? 'login' : 'username', v)}
-              accent={accent}
-              icon="Terminal"
-            />
-            <CField
-              label="ПАРОЛЬ"
+              label="> cipher_key:"
               placeholder="••••••••"
               value={form.password}
               onChange={v => set('password', v)}
@@ -142,8 +153,8 @@ export default function AuthScreen({ mode, onSwitch, onBack }: Props) {
               }}
             >
               {loading
-                ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> ПОДКЛЮЧЕНИЕ...</>
-                : <><Icon name={isLogin ? 'LogIn' : 'UserPlus'} size={16} /> {isLogin ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ'}</>
+                ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> GENERATING NEURAL ID...</>
+                : <><Icon name={isLogin ? 'LogIn' : 'UserPlus'} size={16} /> [ INITIATE HANDSHAKE ]</>
               }
             </button>
           </div>

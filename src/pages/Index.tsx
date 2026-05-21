@@ -24,14 +24,15 @@ import CodeBuilder from '@/components/CodeBuilder';
 import CodeWorkshop from '@/components/CodeWorkshop';
 import NextStepWidget from '@/components/NextStepWidget';
 import EquipmentBadges from '@/components/EquipmentBadges';
-import Onboarding, { useOnboarding } from '@/components/Onboarding';
 import BetaBanner from '@/components/BetaBanner';
 import QuestWatcher from '@/components/QuestWatcher';
+import BootSequence from '@/components/prologue/BootSequence';
+import PrologueFlow, { usePrologue } from '@/components/prologue/PrologueFlow';
 import { GAME_MODES, getModeState, getUnlockedModes } from '@/lib/gameModes';
 import { useGame } from '@/lib/GameContext';
 import { pushNotif } from '@/components/Notifications';
 
-type AppView = 'landing' | 'tutorial' | 'login' | 'register';
+type AppView = 'landing' | 'tutorial' | 'login' | 'register' | 'boot';
 type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop' | 'notifications' | 'crafting' | 'achievements' | 'npc' | 'flashcards' | 'stories' | 'builder' | 'workshop';
 
 export default function Index() {
@@ -40,13 +41,41 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState<Section>('home');
   const [visible, setVisible] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [appView, setAppView] = useState<AppView>('landing');
-  const { show: showOnboarding, setShow: setShowOnboarding } = useOnboarding();
+  const [appView, setAppView] = useState<AppView>('boot');
+  const prologue = usePrologue();
+
+  // Прогрессивное раскрытие интерфейса во время пролога
+  const prologueUnlocked = (() => {
+    if (!prologue.active) return undefined; // все секции открыты
+    const base = new Set<string>();
+    // Этапы 'awakening' и 'first_code' — игрок внутри оверлея, sidebar пуст
+    if (prologue.step === 'first_battle') {
+      // Игрок только что вышел в бой
+      base.add('battle');
+      base.add('profile');
+    } else if (prologue.step === 'lore_factions') {
+      base.add('battle');
+      base.add('profile');
+    } else if (prologue.step === 'open_world') {
+      base.add('map');
+      base.add('battle');
+      base.add('profile');
+    }
+    return base;
+  })();
 
   // Записываем сессию при входе
   useEffect(() => {
     if (token && character) progressStore.recordSession();
   }, [token, character?.id]);
+
+  // Автопродвижение пролога: после первой победы (XP > 0) на шаге first_battle
+  useEffect(() => {
+    if (prologue.step === 'first_battle' && character && character.xp > 0) {
+      const t = setTimeout(() => prologue.advance('lore_factions'), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [prologue.step, character?.xp]);
 
   const navigate = (section: string) => {
     // Проверка прогрессии: заблокированные мини-игры — недоступны
@@ -84,8 +113,11 @@ export default function Index() {
     );
   }
 
-  // Not logged in — show landing / tutorial / auth
+  // Not logged in — show boot / landing / tutorial / auth
   if (!token) {
+    if (appView === 'boot') {
+      return <BootSequence onComplete={() => setAppView('landing')} />;
+    }
     if (appView === 'tutorial') {
       return (
         <Tutorial
@@ -118,7 +150,12 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-cyber-dark flex">
       {/* Sidebar navigation */}
-      <Sidebar activeSection={activeSection} onNavigate={navigate} onCollapse={setSidebarCollapsed} />
+      <Sidebar
+        activeSection={activeSection}
+        onNavigate={navigate}
+        onCollapse={setSidebarCollapsed}
+        unlockedSections={prologueUnlocked}
+      />
 
       {/* Main content — dynamic offset */}
       <main
@@ -153,10 +190,14 @@ export default function Index() {
       <ToastContainer />
       <QuestWatcher />
       <BetaBanner version="0.1.0-beta" />
-      {showOnboarding && (
-        <Onboarding
-          onNavigate={section => { navigate(section); }}
-          onClose={() => setShowOnboarding(false)}
+      {prologue.step && (
+        <PrologueFlow
+          step={prologue.step}
+          onAdvance={prologue.advance}
+          onOpenSection={(s) => {
+            setActiveSection(s as Section);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         />
       )}
     </div>

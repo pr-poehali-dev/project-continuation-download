@@ -6,6 +6,8 @@ interface SidebarProps {
   activeSection: string;
   onNavigate: (section: string) => void;
   onCollapse?: (collapsed: boolean) => void;
+  /** Если задан — показываются только эти разделы, остальные с замком */
+  unlockedSections?: Set<string>;
 }
 
 const NAV_ITEMS = [
@@ -32,7 +34,7 @@ const CLASS_LABEL: Record<string, string> = {
   hacker: 'CIPHER', netrunner: 'DATA GHOST', neural_architect: 'DATA GHOST', street_samurai: 'CIPHER',
 };
 
-export default function Sidebar({ activeSection, onNavigate, onCollapse }: SidebarProps) {
+export default function Sidebar({ activeSection, onNavigate, onCollapse, unlockedSections }: SidebarProps) {
   const { character, logout } = useGame();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,7 +42,10 @@ export default function Sidebar({ activeSection, onNavigate, onCollapse }: Sideb
   const xpPct = character ? Math.round((character.xp / character.xp_to_next) * 100) : 0;
   const hpPct = character ? Math.round((character.hp / character.max_hp) * 100) : 0;
 
+  const isLocked = (id: string) => !!unlockedSections && !unlockedSections.has(id);
+
   const handleNav = (id: string) => {
+    if (isLocked(id)) return;
     onNavigate(id);
     setMobileOpen(false);
   };
@@ -70,15 +75,18 @@ export default function Sidebar({ activeSection, onNavigate, onCollapse }: Sideb
           <nav className="p-4 space-y-1">
             {NAV_ITEMS.map(item => {
               const isActive = activeSection === item.id;
+              const locked = isLocked(item.id);
               return (
                 <button key={item.id} onClick={() => handleNav(item.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 font-orbitron text-sm tracking-wider transition-all"
+                  disabled={locked}
+                  className="w-full flex items-center gap-3 px-4 py-3 font-orbitron text-sm tracking-wider transition-all disabled:cursor-not-allowed"
                   style={{
-                    color: isActive ? item.color : '#666',
-                    backgroundColor: isActive ? item.color + '12' : 'transparent',
-                    borderLeft: isActive ? `2px solid ${item.color}` : '2px solid transparent',
+                    color: locked ? '#333' : isActive ? item.color : '#666',
+                    backgroundColor: isActive && !locked ? item.color + '12' : 'transparent',
+                    borderLeft: isActive && !locked ? `2px solid ${item.color}` : '2px solid transparent',
+                    opacity: locked ? 0.4 : 1,
                   }}>
-                  <Icon name={item.icon as 'Home'} size={18} />
+                  <Icon name={locked ? 'Lock' : item.icon as 'Home'} size={18} />
                   {item.label}
                 </button>
               );
@@ -159,28 +167,31 @@ export default function Sidebar({ activeSection, onNavigate, onCollapse }: Sideb
         <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map(item => {
             const isActive = activeSection === item.id;
+            const locked = isLocked(item.id);
             return (
               <button
                 key={item.id}
                 onClick={() => handleNav(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 py-2.5 transition-all duration-150 relative group ${
+                disabled={locked}
+                title={locked ? `${item.label} · откроется по сюжету` : (collapsed ? item.label : undefined)}
+                className={`w-full flex items-center gap-3 py-2.5 transition-all duration-150 relative group disabled:cursor-not-allowed ${
                   collapsed ? 'justify-center px-0' : 'px-4'
                 }`}
                 style={{
-                  color: isActive ? item.color : '#555',
-                  backgroundColor: isActive ? item.color + '12' : 'transparent',
-                  borderLeft: !collapsed ? (isActive ? `2px solid ${item.color}` : '2px solid transparent') : 'none',
+                  color: locked ? '#2a2a2a' : isActive ? item.color : '#555',
+                  backgroundColor: isActive && !locked ? item.color + '12' : 'transparent',
+                  borderLeft: !collapsed ? (isActive && !locked ? `2px solid ${item.color}` : '2px solid transparent') : 'none',
+                  opacity: locked ? 0.45 : 1,
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#aaa'; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#555'; }}
+                onMouseEnter={e => { if (!isActive && !locked) e.currentTarget.style.color = '#aaa'; }}
+                onMouseLeave={e => { if (!isActive && !locked) e.currentTarget.style.color = '#555'; }}
               >
                 {/* Active glow dot */}
                 {isActive && collapsed && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-6"
                     style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}` }} />
                 )}
-                <Icon name={item.icon as 'Home'} size={18} />
+                <Icon name={locked ? 'Lock' : item.icon as 'Home'} size={18} />
                 {!collapsed && (
                   <span className="font-orbitron text-xs tracking-wider">{item.label}</span>
                 )}

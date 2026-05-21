@@ -112,6 +112,22 @@ export default function CreateCharacter() {
         <div className="font-mono text-xs text-gray-600 tracking-widest">// СОЗДАНИЕ АГЕНТА · CODEGRID-9</div>
       </header>
 
+      {/* Ghost prompt — кем ты был ДО Архива? */}
+      <div className="relative z-10 border-b border-cyber-green/20 bg-cyber-green/5 px-5 lg:px-10 py-3">
+        <div className="max-w-4xl mx-auto flex items-start gap-3">
+          <div className="w-9 h-9 border border-cyber-green/50 bg-cyber-green/10 flex items-center justify-center flex-shrink-0 text-lg">
+            👤
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-mono text-[10px] text-cyber-green/80 mb-0.5">GHOST · СВЯЗНОЙ THE ARCHIVE</div>
+            <div className="font-rajdhani text-sm text-gray-300 leading-snug">
+              «NEXUS не победить одной тактикой. Архив держится на трёх типах агентов.
+              <span className="text-cyber-green"> Кем ты был </span><span className="italic text-white">до</span><span className="text-cyber-green"> того, как сеть позвала тебя?»</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="relative z-10 flex flex-col lg:flex-row min-h-[calc(100vh-65px)]">
         {/* ── LEFT: Character Visual ── */}
         <div className="flex-1 flex flex-col items-center justify-center py-8 px-6 relative">
