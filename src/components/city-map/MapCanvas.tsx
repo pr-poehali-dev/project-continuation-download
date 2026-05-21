@@ -2,12 +2,15 @@ import { useRef, useCallback, useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
 import { DISTRICTS, CONNECTIONS, TYPE_META, District, center, getConnection } from './data';
+import type { DistrictQuestInfo } from './questMarkers';
 
 interface Props {
   selected: District | null;
   filteredIds: Set<string>;
   isUnlocked: (d: District) => boolean;
   onDistrictClick: (d: District, didDrag: boolean) => void;
+  /** id района → инфо об активных квестах в нём */
+  questMarkers?: Map<string, DistrictQuestInfo>;
 }
 
 const MAP_W = 1800;
@@ -15,7 +18,7 @@ const MAP_H = 1300;
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.2;
 
-export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistrictClick }: Props) {
+export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistrictClick, questMarkers }: Props) {
   const { character } = useGame();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -121,13 +124,17 @@ export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistric
       {/* ── Mini-legend ── */}
       <div className="absolute bottom-3 left-3 z-20 px-3 py-2 border border-white/10 bg-black/80 backdrop-blur hidden sm:block">
         <div className="font-mono text-[9px] text-gray-600 mb-1 tracking-widest">// ЛЕГЕНДА</div>
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-3 flex-wrap items-center">
           {(Object.entries(TYPE_META) as [District['type'], typeof TYPE_META[District['type']]][]).map(([t, m]) => (
             <span key={t} className="font-mono text-[9px] flex items-center gap-1" style={{ color: m.color + 'cc' }}>
               <span>{m.icon}</span>
               <span className="hidden md:inline">{m.label}</span>
             </span>
           ))}
+          <span className="font-mono text-[9px] flex items-center gap-1 text-cyber-yellow/90">
+            <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-cyber-yellow text-black font-bold" style={{ fontSize: 9 }}>!</span>
+            <span className="hidden md:inline">Квест</span>
+          </span>
         </div>
       </div>
 
@@ -242,6 +249,7 @@ export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistric
               const isSelected = selected?.id === d.id;
               const dimmed = !filteredIds.has(d.id);
               const meta = TYPE_META[d.type];
+              const questInfo = questMarkers?.get(d.id);
 
               return (
                 <DistrictBlock
@@ -252,6 +260,7 @@ export default function MapCanvas({ selected, filteredIds, isUnlocked, onDistric
                   isSelected={isSelected}
                   dimmed={dimmed}
                   tick={tick}
+                  questInfo={questInfo}
                   onClick={() => onDistrictClick(d, didDrag.current)}
                 />
               );
@@ -340,10 +349,11 @@ interface DistrictBlockProps {
   isSelected: boolean;
   dimmed: boolean;
   tick: number;
+  questInfo?: DistrictQuestInfo;
   onClick: () => void;
 }
 
-function DistrictBlock({ d, meta, unlocked, isSelected, dimmed, onClick }: DistrictBlockProps) {
+function DistrictBlock({ d, meta, unlocked, isSelected, dimmed, questInfo, onClick }: DistrictBlockProps) {
   const accent = d.factionColor;
   const fillBg = dimmed ? '#050a0e'
     : unlocked
@@ -514,6 +524,67 @@ function DistrictBlock({ d, meta, unlocked, isSelected, dimmed, onClick }: Distr
           fontFamily="monospace">
           ???
         </text>
+      )}
+
+      {/* ═══ QUEST MARKER ═══ */}
+      {questInfo && unlocked && (
+        <QuestMarker
+          x={d.x + d.w - 18}
+          y={d.y - 8}
+          count={questInfo.pendingCount}
+          hasStory={questInfo.hasStory}
+        />
+      )}
+    </g>
+  );
+}
+
+// ─── Маркер квеста (восклицательный знак) ──────────────────────────────────
+
+function QuestMarker({ x, y, count, hasStory }: { x: number; y: number; count: number; hasStory: boolean }) {
+  // Сюжетные квесты — золотой, остальные — жёлтый
+  const color = hasStory ? '#ffd700' : '#ffaa00';
+  const glow = hasStory ? '#ffd700' : '#ff8800';
+
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {/* Pulsing halo */}
+      <circle cx={x} cy={y} r={18} fill={glow} opacity={0.2}>
+        <animate attributeName="r" values="18;26;18" dur="1.8s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.25;0;0.25" dur="1.8s" repeatCount="indefinite" />
+      </circle>
+
+      {/* Outer ring */}
+      <circle cx={x} cy={y} r={15} fill="#0a0a0a" stroke={color} strokeWidth={2} />
+
+      {/* Inner solid */}
+      <circle cx={x} cy={y} r={11} fill={color}>
+        <animate attributeName="opacity" values="1;0.7;1" dur="1.2s" repeatCount="indefinite" />
+      </circle>
+
+      {/* Exclamation mark */}
+      <text x={x} y={y + 6}
+        fontSize={18}
+        fill="#0a0a0a"
+        fontFamily="Orbitron, monospace"
+        fontWeight="900"
+        textAnchor="middle">
+        !
+      </text>
+
+      {/* Count badge (если > 1) */}
+      {count > 1 && (
+        <g>
+          <circle cx={x + 12} cy={y - 11} r={8} fill="#0a0a0a" stroke={color} strokeWidth={1.5} />
+          <text x={x + 12} y={y - 8}
+            fontSize={10}
+            fill={color}
+            fontFamily="monospace"
+            fontWeight="900"
+            textAnchor="middle">
+            {count}
+          </text>
+        </g>
       )}
     </g>
   );

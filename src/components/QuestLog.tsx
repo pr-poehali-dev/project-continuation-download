@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { pushNotif } from '@/components/Notifications';
 import { useProgress } from '@/lib/useProgress';
 
-interface Quest {
+export interface Quest {
   id: string;
   title: string;
   faction: string;
@@ -22,13 +22,13 @@ interface Quest {
   unlockLevel?: number;
 }
 
-interface QuestObjective {
+export interface QuestObjective {
   text: string;
   /** Автоматическая проверка по типу */
   check?: ObjectiveCheck;
 }
 
-type ObjectiveCheck =
+export type ObjectiveCheck =
   | { type: 'lessons'; count: number }
   | { type: 'lesson_id'; id: number }
   | { type: 'battles'; count: number }
@@ -58,7 +58,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 // ─── Квесты ──────────────────────────────────────────────────────────────────
 
-const QUESTS: Quest[] = [
+export const QUESTS: Quest[] = [
   // ════ STORY ════
   {
     id: 'act1_1',
@@ -353,7 +353,7 @@ const STATUS_ORDER = ['active', 'locked', 'completed'];
 
 // ─── Проверка выполнения цели по реальным данным ─────────────────────────────
 
-function checkObjective(
+export function checkObjective(
   obj: QuestObjective,
   p: ReturnType<typeof import('@/lib/useProgress').useProgress>,
   character: { level: number } | null,

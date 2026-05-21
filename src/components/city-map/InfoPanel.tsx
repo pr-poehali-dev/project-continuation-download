@@ -1,6 +1,7 @@
 import Icon from '@/components/ui/icon';
 import { useGame } from '@/lib/GameContext';
 import { DISTRICTS, FACTIONS, FACTION_BY_NAME, TYPE_META, District } from './data';
+import type { DistrictQuestInfo } from './questMarkers';
 
 interface Props {
   selected: District | null;
@@ -11,6 +12,7 @@ interface Props {
   onSupport: (factionId: string) => void;
   onGoTo: () => void;
   onClose: () => void;
+  questMarkers?: Map<string, DistrictQuestInfo>;
 }
 
 export default function InfoPanel({
@@ -22,8 +24,10 @@ export default function InfoPanel({
   onSupport,
   onGoTo,
   onClose,
+  questMarkers,
 }: Props) {
   const { character } = useGame();
+  const districtQuests = selected ? questMarkers?.get(selected.id) : undefined;
 
   return (
     <div className="w-full lg:w-72 flex-shrink-0">
@@ -94,6 +98,38 @@ export default function InfoPanel({
             <div className="font-mono text-[10px] text-gray-600 mb-1">// НАГРАДЫ</div>
             <div className="font-mono text-xs text-cyber-yellow">{selected.rewards}</div>
           </div>
+
+          {/* ── Активные квесты в этом районе ── */}
+          {districtQuests && districtQuests.quests.length > 0 && (
+            <div className="border p-3"
+              style={{ borderColor: '#ffaa0040', backgroundColor: '#ffaa0008' }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-mono text-[10px] text-cyber-yellow tracking-widest flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-cyber-yellow text-black font-black text-[10px]">!</span>
+                  АКТИВНЫЕ КВЕСТЫ
+                </div>
+                <span className="font-mono text-[10px] text-cyber-yellow">{districtQuests.pendingCount}</span>
+              </div>
+              <div className="space-y-1.5">
+                {districtQuests.quests.slice(0, 4).map(q => (
+                  <div key={q.id}
+                    className="flex items-center gap-2 px-2 py-1 border"
+                    style={{ borderColor: q.color + '30', backgroundColor: q.color + '06' }}>
+                    <span className="font-mono text-[9px] uppercase shrink-0"
+                      style={{ color: q.color + 'aa' }}>
+                      {q.type === 'story' ? '★' : '·'}
+                    </span>
+                    <span className="font-rajdhani text-xs text-gray-300 truncate">{q.title}</span>
+                  </div>
+                ))}
+                {districtQuests.quests.length > 4 && (
+                  <div className="font-mono text-[9px] text-gray-600 px-2">
+                    +{districtQuests.quests.length - 4} ещё
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Unlock progress */}
           {!isUnlocked(selected) && (

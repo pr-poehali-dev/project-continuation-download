@@ -1,20 +1,33 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/lib/GameContext';
+import { useProgress } from '@/lib/useProgress';
 import { api } from '@/lib/api';
 import { pushNotif } from './Notifications';
 import { DISTRICTS, FACTIONS, TYPE_META, District } from './city-map/data';
 import FactionHud from './city-map/FactionHud';
 import MapCanvas from './city-map/MapCanvas';
 import InfoPanel from './city-map/InfoPanel';
+import { buildQuestMarkers, loadClaimedQuests } from './city-map/questMarkers';
 
 // ─── Главный компонент ───────────────────────────────────────────────────────
 
 export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => void }) {
   const { character } = useGame();
+  const prog = useProgress();
   const playerLevel = character?.level || 1;
 
   const [selected, setSelected] = useState<District | null>(null);
   const [filter, setFilter] = useState<District['type'] | 'all'>('all');
+
+  // ── Квесты: маркеры на районах ─────────────────────────────
+  const questMarkers = useMemo(
+    () => buildQuestMarkers(prog, character ? { level: character.level } : null, loadClaimedQuests()),
+    [prog, character?.level, prog.lessonsCompleted.length, prog.battlesWon, prog.npcsSpoken.length, prog.dungeonsCompleted.length],
+  );
+  const totalPendingQuests = useMemo(
+    () => Array.from(questMarkers.values()).reduce((a, b) => a + b.pendingCount, 0),
+    [questMarkers],
+  );
 
   // ── Фракции: моя репутация + глобальное влияние ─────────────
   const [reputation, setReputation] = useState<Record<string, number>>({ archive: 0, black_syntax: 0, order: 0 });
@@ -81,12 +94,22 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
             <h2 className="font-orbitron text-2xl lg:text-3xl text-white">
               КАРТА <span className="text-cyber-cyan">CODEGRID-9</span>
             </h2>
-            <p className="text-gray-600 font-mono text-xs mt-0.5">
-              LVL <span className="text-cyber-green">{playerLevel}</span>
-              {' · '}
+            <p className="text-gray-600 font-mono text-xs mt-0.5 flex items-center gap-2 flex-wrap">
+              <span>LVL <span className="text-cyber-green">{playerLevel}</span></span>
+              <span className="text-gray-800">·</span>
               <span className="text-gray-700">
-                {DISTRICTS.filter(d => isUnlocked(d)).length}/{DISTRICTS.length} районов открыто
+                {DISTRICTS.filter(d => isUnlocked(d)).length}/{DISTRICTS.length} районов
               </span>
+              {totalPendingQuests > 0 && (
+                <>
+                  <span className="text-gray-800">·</span>
+                  <button onClick={() => onNavigate?.('quests')}
+                    className="flex items-center gap-1 text-cyber-yellow hover:text-yellow-300 transition-colors">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyber-yellow animate-pulse" />
+                    {totalPendingQuests} активных квестов
+                  </button>
+                </>
+              )}
             </p>
           </div>
           {/* Filters */}
@@ -124,10 +147,12 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
             filteredIds={filteredIds}
             isUnlocked={isUnlocked}
             onDistrictClick={handleDistrictClick}
+            questMarkers={questMarkers}
           />
 
           {/* ── INFO PANEL ── */}
           <InfoPanel
+            questMarkers={questMarkers}
             selected={selected}
             playerLevel={playerLevel}
             reputation={reputation}
