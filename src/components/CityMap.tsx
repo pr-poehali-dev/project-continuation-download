@@ -68,9 +68,9 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
   );
 
   return (
-    <section className="py-8 px-4 lg:px-6 min-h-screen relative">
+    <section className="py-6 px-3 lg:px-6 min-h-screen relative">
       <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-[1600px] mx-auto relative z-10">
 
         {/* Header */}
         <div className="mb-4 flex items-end justify-between flex-wrap gap-3">
@@ -78,17 +78,15 @@ export default function CityMap({ onNavigate }: { onNavigate?: (s: string) => vo
             <div className="font-mono text-[10px] text-gray-600 tracking-widest mb-1">
               // КАРТА ГОРОДА · CODEGRID-9 · 2087
             </div>
-            <h2 className="font-orbitron text-2xl text-white">
+            <h2 className="font-orbitron text-2xl lg:text-3xl text-white">
               КАРТА <span className="text-cyber-cyan">CODEGRID-9</span>
             </h2>
             <p className="text-gray-600 font-mono text-xs mt-0.5">
               LVL <span className="text-cyber-green">{playerLevel}</span>
               {' · '}
               <span className="text-gray-700">
-                {DISTRICTS.filter(d => isUnlocked(d)).length}/{DISTRICTS.length} районов
+                {DISTRICTS.filter(d => isUnlocked(d)).length}/{DISTRICTS.length} районов открыто
               </span>
-              {' · '}
-              <span className="text-gray-700 text-[10px]">Перетащи карту · Колесо мыши — зум</span>
             </p>
           </div>
           {/* Filters */}
