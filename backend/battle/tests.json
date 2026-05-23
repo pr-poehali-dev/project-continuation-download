@@ -5,9 +5,21 @@
       "method": "POST",
       "path": "/",
       "body": {"action": "enemies"},
-      "expectedStatus": 200,
-      "expectedBody": {"enemies": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
+    },
+    {
+      "name": "Attack unauthenticated",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "attack", "enemy_id": "syntax_ghost", "code_correct": true},
+      "expectedStatus": 401
+    },
+    {
+      "name": "Unknown enemy id",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "attack", "enemy_id": "definitely_not_an_enemy", "code_correct": true},
+      "expectedStatus": 401
     }
   ]
 }

@@ -10,22 +10,41 @@ import math
 SCHEMA = "t_p99057007_project_continuation"
 
 ENEMIES = {
-    "corp_drone": {
-        "name": "Корп-Дрон", "level": 3, "max_hp": 120, "xp": 80, "coins": 20,
-        "base_damage": 12, "defense": 5, "drop_rarity": ["common"],
-    },
-    "neuro_guard": {
-        "name": "Нейро-Страж", "level": 7, "max_hp": 280, "xp": 200, "coins": 50,
-        "base_damage": 22, "defense": 10, "drop_rarity": ["common", "uncommon"],
-    },
-    "ai_corporant": {
-        "name": "ИИ-Корпорант", "level": 15, "max_hp": 650, "xp": 450, "coins": 120,
-        "base_damage": 40, "defense": 18, "drop_rarity": ["uncommon", "rare"],
-    },
-    "zero_corp_boss": {
-        "name": "Босс: Директор Ноль", "level": 25, "max_hp": 1500, "xp": 1200, "coins": 400,
-        "base_damage": 70, "defense": 30, "drop_rarity": ["rare", "epic"],
-    },
+    # ─── Глава 1: Пробуждение ─────────────────────────────────
+    "syntax_ghost":    {"name": "SyntaxGhost",     "level": 2,  "max_hp": 100,   "xp": 80,    "coins": 40,    "base_damage": 8,  "defense": 3,  "drop_rarity": ["common"]},
+    "name_error":      {"name": "NameError-α",     "level": 4,  "max_hp": 160,   "xp": 140,   "coins": 70,    "base_damage": 12, "defense": 5,  "drop_rarity": ["common"]},
+    "type_error":      {"name": "TypeError-β",     "level": 6,  "max_hp": 220,   "xp": 220,   "coins": 110,   "base_damage": 16, "defense": 7,  "drop_rarity": ["common", "uncommon"]},
+    "indent_demon":    {"name": "IndentDemon",     "level": 8,  "max_hp": 320,   "xp": 380,   "coins": 190,   "base_damage": 22, "defense": 10, "drop_rarity": ["uncommon"]},
+
+    # ─── Глава 2: Сеть данных ────────────────────────────────
+    "list_wraith":     {"name": "ListWraith",      "level": 10, "max_hp": 420,   "xp": 500,   "coins": 250,   "base_damage": 28, "defense": 12, "drop_rarity": ["uncommon"]},
+    "dict_phantom":    {"name": "DictPhantom",     "level": 12, "max_hp": 530,   "xp": 650,   "coins": 320,   "base_damage": 32, "defense": 14, "drop_rarity": ["uncommon", "rare"]},
+    "loop_serpent":    {"name": "LoopSerpent",     "level": 14, "max_hp": 680,   "xp": 850,   "coins": 425,   "base_damage": 36, "defense": 16, "drop_rarity": ["rare"]},
+    "data_overseer":   {"name": "DataOverseer",    "level": 17, "max_hp": 1100,  "xp": 1500,  "coins": 750,   "base_damage": 44, "defense": 20, "drop_rarity": ["rare", "epic"]},
+
+    # ─── Глава 3: Функции силы ───────────────────────────────
+    "func_phantom":    {"name": "FuncPhantom",     "level": 19, "max_hp": 1000,  "xp": 1200,  "coins": 600,   "base_damage": 48, "defense": 22, "drop_rarity": ["rare"]},
+    "class_titan":     {"name": "ClassTitan",      "level": 22, "max_hp": 1400,  "xp": 1700,  "coins": 850,   "base_damage": 56, "defense": 26, "drop_rarity": ["rare", "epic"]},
+    "oop_demon":       {"name": "OopDemon",        "level": 24, "max_hp": 1700,  "xp": 2000,  "coins": 1000,  "base_damage": 62, "defense": 28, "drop_rarity": ["epic"]},
+    "order_judge":     {"name": "OrderJudge",      "level": 26, "max_hp": 2300,  "xp": 2200,  "coins": 1100,  "base_damage": 70, "defense": 32, "drop_rarity": ["epic"]},
+
+    # ─── Глава 4: Глубже в код ───────────────────────────────
+    "except_wraith":   {"name": "ExceptWraith",    "level": 27, "max_hp": 1900,  "xp": 2500,  "coins": 1250,  "base_damage": 72, "defense": 34, "drop_rarity": ["epic"]},
+    "module_titan":    {"name": "ModuleTitan",     "level": 29, "max_hp": 2200,  "xp": 3000,  "coins": 1500,  "base_damage": 78, "defense": 36, "drop_rarity": ["epic"]},
+    "recursion_lord":  {"name": "RecursionLord",   "level": 31, "max_hp": 2600,  "xp": 3500,  "coins": 1750,  "base_damage": 84, "defense": 38, "drop_rarity": ["epic"]},
+    "nexus_architect": {"name": "NEXUS-Architect", "level": 35, "max_hp": 3500,  "xp": 5000,  "coins": 2500,  "base_damage": 95, "defense": 42, "drop_rarity": ["epic", "legendary"]},
+
+    # ─── Глава 5: Восхождение ────────────────────────────────
+    "async_specter":     {"name": "AsyncSpecter",      "level": 38, "max_hp": 4500,  "xp": 6000,  "coins": 3000,  "base_damage": 105, "defense": 46, "drop_rarity": ["legendary"]},
+    "decorator_overlord":{"name": "DecoratorOverlord", "level": 41, "max_hp": 5500,  "xp": 7500,  "coins": 3750,  "base_damage": 118, "defense": 50, "drop_rarity": ["legendary"]},
+    "metaclass_ancient": {"name": "MetaclassAncient",  "level": 45, "max_hp": 7000,  "xp": 10000, "coins": 5000,  "base_damage": 132, "defense": 56, "drop_rarity": ["legendary"]},
+    "pyth_0n":           {"name": "PYTH-0N",           "level": 50, "max_hp": 12000, "xp": 25000, "coins": 10000, "base_damage": 160, "defense": 64, "drop_rarity": ["legendary"]},
+
+    # ─── Обратная совместимость со старыми id ────────────────
+    "corp_drone":     {"name": "Корп-Дрон",        "level": 3,  "max_hp": 120,  "xp": 80,   "coins": 20,  "base_damage": 12, "defense": 5,  "drop_rarity": ["common"]},
+    "neuro_guard":    {"name": "Нейро-Страж",      "level": 7,  "max_hp": 280,  "xp": 200,  "coins": 50,  "base_damage": 22, "defense": 10, "drop_rarity": ["common", "uncommon"]},
+    "ai_corporant":   {"name": "ИИ-Корпорант",     "level": 15, "max_hp": 650,  "xp": 450,  "coins": 120, "base_damage": 40, "defense": 18, "drop_rarity": ["uncommon", "rare"]},
+    "zero_corp_boss": {"name": "Босс: Директор",   "level": 25, "max_hp": 1500, "xp": 1200, "coins": 400, "base_damage": 70, "defense": 30, "drop_rarity": ["rare", "epic"]},
 }
 
 def get_conn():
