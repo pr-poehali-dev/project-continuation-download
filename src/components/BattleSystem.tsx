@@ -11,6 +11,7 @@ import {
   pickTasksForEnemy,
   calculateDamage,
   type CombatTask,
+  type TaskType,
 } from '@/lib/combatTasks';
 import {
   loadPyodideRuntime,
@@ -19,6 +20,9 @@ import {
   comparePredict,
   getLoadingState,
 } from '@/lib/pyodideRunner';
+import { useOnboarding } from '@/lib/useOnboarding';
+import CombatTutorial from '@/components/combat/CombatTutorial';
+import TaskTypeIntro from '@/components/combat/TaskTypeIntro';
 
 // ─── Тема по классу ──────────────────────────────────────────────────────────
 const CLASS_THEME: Record<string, { primary: string; secondary: string; label: string }> = {
@@ -81,6 +85,31 @@ export default function BattleSystem() {
   const [pyodideLoading, setPyodideLoading] = useState(false);
   const [pyodideReady, setPyodideReady] = useState(getLoadingState() === 'ready');
 
+  // Онбординг + тренировка
+  const [trainingMode, setTrainingMode] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const tutorialOnb = useOnboarding('boot:battle');
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [typeIntroFor, setTypeIntroFor] = useState<TaskType | null>(null);
+  const typeOnbWrite = useOnboarding('type:write');
+  const typeOnbDebug = useOnboarding('type:debug');
+  const typeOnbRefactor = useOnboarding('type:refactor');
+  const typeOnbPredict = useOnboarding('type:predict');
+  const typeOnbComplete = useOnboarding('type:complete');
+
+  const typeSeenMap = useMemo(() => ({
+    write: typeOnbWrite,
+    debug: typeOnbDebug,
+    refactor: typeOnbRefactor,
+    predict: typeOnbPredict,
+    complete: typeOnbComplete,
+  } as const), [typeOnbWrite, typeOnbDebug, typeOnbRefactor, typeOnbPredict, typeOnbComplete]);
+
+  // Открываем туториал при первом заходе (один раз)
+  useEffect(() => {
+    if (!tutorialOnb.seen) setShowTutorial(true);
+  }, [tutorialOnb.seen]);
+
   const currentTask = taskChain[taskIdx];
   const totalTasks = taskChain.length || selectedEnemy.taskCount;
   const taskStartedAt = useRef<number>(Date.now());
@@ -124,12 +153,16 @@ export default function BattleSystem() {
   }, []);
 
   const enemyAttack = useCallback(() => {
+    // В тренировке враг не бьёт
+    if (trainingMode) {
+      addLog('🎓 Тренировка: попробуй ещё раз, штрафа нет.', 'info');
+      return;
+    }
     // Если у врага нет PREDICT-кода — обычная атака
     const attacks = selectedEnemy.enemyAttacks || [];
     const pick = attacks.length ? attacks[Math.floor(Math.random() * attacks.length)] : null;
 
     if (!pick) {
-      // Простая атака
       const baseDmg = 15 + selectedEnemy.level * 2 + Math.floor(Math.random() * 10);
       const reduction = Math.min(0.5, defense * 0.015);
       const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
@@ -146,7 +179,7 @@ export default function BattleSystem() {
     }
 
     addLog(`⚠ ${selectedEnemy.name} бросает код. Найди вывод ниже!`, 'enemy');
-  }, [selectedEnemy, defense]);
+  }, [selectedEnemy, defense, trainingMode]);
 
   const startTimer = useCallback(() => {
     stopTimer();
@@ -168,20 +201,29 @@ export default function BattleSystem() {
   }, [stopTimer, enemyAttack, agility]);
 
   useEffect(() => {
-    if (battleState === 'fighting') startTimer();
+    if (battleState === 'fighting' && !trainingMode) startTimer();
     else stopTimer();
     return stopTimer;
-  }, [battleState, taskIdx, startTimer, stopTimer]);
+  }, [battleState, taskIdx, startTimer, stopTimer, trainingMode]);
 
-  const startBattle = async () => {
+  const startBattle = async (training = trainingMode) => {
+    setTrainingMode(training);
     setBattleState('loading');
     setBattleLog([
-      { text: `⚡ БОЙ НАЧАТ // ${selectedEnemy.name} [${selectedEnemy.faction}] LVL ${selectedEnemy.level}`, type: 'system' },
+      { text: training
+          ? `🎓 ТРЕНИРОВКА // ${selectedEnemy.name} (без HP, без таймера)`
+          : `⚡ БОЙ НАЧАТ // ${selectedEnemy.name} [${selectedEnemy.faction}] LVL ${selectedEnemy.level}`,
+        type: 'system' },
     ]);
-    if (selectedEnemy.taunt) addLog(`💬 "${selectedEnemy.taunt}"`, 'enemy');
+    if (selectedEnemy.taunt && !training) addLog(`💬 "${selectedEnemy.taunt}"`, 'enemy');
 
-    // Подгружаем задачи
-    const chain = pickTasksForEnemy(selectedEnemy.topics, selectedEnemy.difficulty, selectedEnemy.taskCount);
+    // Подгружаем задачи — фильтруем по allowedTypes врага
+    const chain = pickTasksForEnemy(
+      selectedEnemy.topics,
+      selectedEnemy.difficulty,
+      selectedEnemy.taskCount,
+      selectedEnemy.allowedTypes,
+    );
     setTaskChain(chain);
     setTaskIdx(0);
     setCode(chain[0]?.type === 'write' ? chain[0].starter
@@ -206,7 +248,7 @@ export default function BattleSystem() {
     setBattleState('fighting');
   };
 
-  // Загружаем стартовый код для новой задачи
+  // Загружаем стартовый код для новой задачи + показываем микро-урок (1 раз на тип)
   useEffect(() => {
     const t = taskChain[taskIdx];
     if (!t) return;
@@ -217,12 +259,21 @@ export default function BattleSystem() {
     else setCode('');
     setPredictAnswer('');
     setShowHint(false);
+    setShowSolution(false);
     setTestResults(null);
+
+    // Микро-урок: показываем 1 раз на тип задачи (если ещё не видел)
+    const seen = typeSeenMap[t.type]?.seen;
+    if (!seen) setTypeIntroFor(t.type);
     taskStartedAt.current = Date.now();
   }, [taskIdx, taskChain]);
 
-  // Сохранение победы
+  // Сохранение победы (только не в тренировке)
   const saveBattleWin = useCallback(async () => {
+    if (trainingMode) {
+      addLog('🎓 Тренировка пройдена. Награды не сохраняются — это разминка.', 'info');
+      return;
+    }
     setSaving(true);
     const result = await api.battle.attack(selectedEnemy.id, true, 0);
     setSaving(false);
@@ -238,7 +289,7 @@ export default function BattleSystem() {
         pushNotif({ type: 'item', title: `Дроп: ${result.dropped_item.name}`, body: `${result.dropped_item.rarity}`, icon: '💎', color: '#aa00ff' });
       }
     }
-  }, [selectedEnemy, applyXpResult]);
+  }, [selectedEnemy, applyXpResult, trainingMode]);
 
   // Главная функция — атака кодом
   const attackWithCode = async () => {
@@ -534,8 +585,8 @@ export default function BattleSystem() {
 
           {/* Right: Task + editor */}
           <div className="space-y-3">
-            {/* Timer */}
-            {battleState === 'fighting' && currentTask && (
+            {/* Timer (только в боевом режиме) */}
+            {battleState === 'fighting' && currentTask && !trainingMode && (
               <div>
                 <div className="flex justify-between font-mono text-xs mb-1" style={{ color: timerColor }}>
                   <span>⏱ ВРЕМЯ НА РЕШЕНИЕ</span><span>{timeLeft}с</span>
@@ -544,6 +595,14 @@ export default function BattleSystem() {
                   <div className="h-full transition-all duration-1000"
                     style={{ width: `${timerPct}%`, backgroundColor: timerColor, boxShadow: `0 0 6px ${timerColor}` }} />
                 </div>
+              </div>
+            )}
+
+            {/* Training banner */}
+            {battleState === 'fighting' && trainingMode && (
+              <div className="border border-purple-500/30 bg-purple-500/5 px-3 py-2 font-mono text-[11px] text-purple-300 flex items-center gap-2">
+                <Icon name="GraduationCap" size={12} />
+                Тренировка: без таймера, без HP. Подсказки и решение доступны.
               </div>
             )}
 
@@ -560,10 +619,18 @@ export default function BattleSystem() {
                       {currentTask.topic} · {currentTask.difficulty}
                     </span>
                   </div>
-                  <button onClick={useHint} disabled={showHint}
-                    className="font-mono text-[10px] px-2 py-0.5 border border-yellow-500/40 text-yellow-400 disabled:opacity-40">
-                    💡 {showHint ? 'Открыта' : 'Подсказка'}
-                  </button>
+                  <div className="flex gap-1.5">
+                    <button onClick={useHint} disabled={showHint}
+                      className="font-mono text-[10px] px-2 py-0.5 border border-yellow-500/40 text-yellow-400 disabled:opacity-40">
+                      💡 {showHint ? 'Открыта' : 'Подсказка'}
+                    </button>
+                    {trainingMode && currentTask.solution && (
+                      <button onClick={() => setShowSolution(s => !s)}
+                        className="font-mono text-[10px] px-2 py-0.5 border border-purple-500/40 text-purple-400">
+                        📖 {showSolution ? 'Скрыть' : 'Решение'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {currentTask.flavor && (
@@ -587,6 +654,25 @@ export default function BattleSystem() {
                   <div className="mt-2 border border-yellow-500/30 bg-yellow-500/5 p-2">
                     <div className="font-mono text-[9px] text-yellow-500">// HINT</div>
                     <pre className="font-mono text-[11px] text-yellow-300 whitespace-pre-wrap">{currentTask.hint}</pre>
+                  </div>
+                )}
+
+                {trainingMode && showSolution && currentTask.solution && (
+                  <div className="mt-2 border border-purple-500/30 bg-purple-500/5 p-2 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="font-mono text-[9px] text-purple-400">// SOLUTION + EXPLANATION</div>
+                      <button onClick={() => {
+                        if (currentTask.solution) setCode(currentTask.solution);
+                      }} className="font-mono text-[9px] text-purple-300 border border-purple-500/40 px-1.5 py-0.5">
+                        ↓ вставить в редактор
+                      </button>
+                    </div>
+                    <pre className="font-mono text-[11px] text-purple-200 whitespace-pre-wrap bg-black/30 p-2">{currentTask.solution}</pre>
+                    {currentTask.explanation && (
+                      <div className="font-rajdhani text-[12px] text-gray-300 leading-relaxed whitespace-pre-line">
+                        {currentTask.explanation}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -674,12 +760,27 @@ export default function BattleSystem() {
 
             {/* Controls */}
             {battleState === 'idle' && (
-              <button onClick={startBattle} disabled={pyodideLoading}
-                className="w-full py-3.5 font-orbitron text-sm tracking-widest border transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ borderColor: theme.primary, color: theme.primary, backgroundColor: theme.primary + '15', boxShadow: `0 0 20px ${theme.primary}20` }}>
-                <Icon name="Zap" size={16} />
-                {pyodideLoading ? 'PYTHON ГРУЗИТСЯ...' : 'НАЧАТЬ БОЙ'}
-              </button>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => startBattle(false)} disabled={pyodideLoading}
+                    className="py-3.5 font-orbitron text-sm tracking-widest border transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ borderColor: theme.primary, color: theme.primary, backgroundColor: theme.primary + '15', boxShadow: `0 0 20px ${theme.primary}20` }}>
+                    <Icon name="Zap" size={16} />
+                    {pyodideLoading ? 'PYTHON...' : 'БОЙ'}
+                  </button>
+                  <button onClick={() => startBattle(true)} disabled={pyodideLoading}
+                    className="py-3.5 font-orbitron text-sm tracking-widest border transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ borderColor: '#8888ff', color: '#aaaaff', backgroundColor: '#aaaaff15' }}>
+                    <Icon name="GraduationCap" size={16} />
+                    ТРЕНИРОВКА
+                  </button>
+                </div>
+                <button onClick={() => setShowTutorial(true)}
+                  className="w-full py-2 font-mono text-[11px] border border-white/15 text-gray-400 hover:bg-white/5 flex items-center justify-center gap-2">
+                  <Icon name="BookOpen" size={12} />
+                  Открыть обучение
+                </button>
+              </div>
             )}
 
             {battleState === 'fighting' && (
@@ -726,7 +827,7 @@ export default function BattleSystem() {
                   </div>
                 )}
 
-                <button onClick={startBattle}
+                <button onClick={() => startBattle(trainingMode)}
                   className="font-orbitron text-xs px-6 py-2 border transition-all"
                   style={{ borderColor: theme.primary, color: theme.primary }}>
                   {battleState === 'win' ? 'СЛЕДУЮЩИЙ ВРАГ' : 'ПОПРОБОВАТЬ ЕЩЁ'}
@@ -741,6 +842,29 @@ export default function BattleSystem() {
           <span className="glitch-text" style={{ color: theme.primary + '40' }}>CODEGRID-9 // 2087</span>
         </div>
       </div>
+
+      {/* Туториал боя — один раз при первом заходе или вручную */}
+      {showTutorial && (
+        <CombatTutorial
+          themeColor={theme.primary}
+          onClose={() => {
+            tutorialOnb.markSeen();
+            setShowTutorial(false);
+          }}
+        />
+      )}
+
+      {/* Микро-урок по типу задачи — один раз на тип */}
+      {typeIntroFor && (
+        <TaskTypeIntro
+          type={typeIntroFor}
+          themeColor={theme.primary}
+          onClose={() => {
+            typeSeenMap[typeIntroFor]?.markSeen();
+            setTypeIntroFor(null);
+          }}
+        />
+      )}
     </section>
   );
 }

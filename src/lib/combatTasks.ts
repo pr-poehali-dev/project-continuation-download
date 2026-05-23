@@ -22,6 +22,10 @@ interface TaskBase {
   hint: string;
   /** Лор-флавор: что говорит враг при выдаче задачи. */
   flavor?: string;
+  /** Эталонное решение для кнопки «Покажи ответ» в тренировке. */
+  solution?: string;
+  /** Построчное объяснение решения для тренировки. */
+  explanation?: string;
 }
 
 export interface WriteTask extends TaskBase {
@@ -86,6 +90,8 @@ export const COMBAT_TASKS: CombatTask[] = [
     starter: 'def greet(name):\n    ',
     hint: 'return f"Привет, {name}!"',
     flavor: 'NEXUS-Drone сканирует твою личность. Покажи что ты не бот — поздоровайся.',
+    solution: 'def greet(name):\n    return f"Привет, {name}!"',
+    explanation: 'def greet(name): — объявляем функцию с одним аргументом name.\nreturn — возвращает значение из функции.\nf"..." — f-строка: всё внутри {} заменяется на значение переменной.\nЕсли вызвать greet("Nova"), Python вернёт строку "Привет, Nova!".',
     tests: [
       { call: 'greet("Nova")', expect: "'Привет, Nova!'", label: 'greet("Nova")' },
       { call: 'greet("Ghost")', expect: "'Привет, Ghost!'", label: 'greet("Ghost")' },
@@ -101,6 +107,8 @@ export const COMBAT_TASKS: CombatTask[] = [
     flavor: 'Враг бросает простой код. Что он напечатает?',
     code: 'a = 5\nb = 3\nprint(a + b)',
     expectedOutput: '8',
+    solution: '8',
+    explanation: 'a = 5 — переменная a получает значение 5.\nb = 3 — переменная b получает значение 3.\nprint(a + b) — напечатает результат сложения: 5 + 3 = 8.\nВвод ответа: просто число 8.',
   },
   {
     id: 'w_cond_1',
@@ -112,6 +120,8 @@ export const COMBAT_TASKS: CombatTask[] = [
     starter: 'def is_adult(age):\n    ',
     hint: 'return age >= 18',
     flavor: 'Проверка допуска к корпоративной сети.',
+    solution: 'def is_adult(age):\n    return age >= 18',
+    explanation: 'age >= 18 — это сравнение. Python возвращает True или False.\nreturn просто отдаёт результат этого сравнения.\nНе нужен if/else: само сравнение уже даёт нужное значение.',
     tests: [
       { call: 'is_adult(20)', expect: 'True' },
       { call: 'is_adult(17)', expect: 'False' },
@@ -128,6 +138,8 @@ export const COMBAT_TASKS: CombatTask[] = [
     template: 'def sum_to(n):\n    total = 0\n    for i in range(1, n + 1):\n        ___PLAYER___\n    return total',
     hint: 'total += i',
     flavor: 'Восстанови повреждённый алгоритм.',
+    solution: 'total += i',
+    explanation: 'Цикл for i in range(1, n+1) даёт нам числа 1, 2, ..., n по одному.\nНужно к total каждый раз прибавлять текущее i.\ntotal += i — это сокращение для total = total + i.\nВ итоге переменная total соберёт сумму всех чисел.',
     tests: [
       { call: 'sum_to(5)', expect: '15' },
       { call: 'sum_to(10)', expect: '55' },
@@ -144,6 +156,8 @@ export const COMBAT_TASKS: CombatTask[] = [
     brokenCode: 'def squares(n):\n    result = []\n    for i in range(n):\n        result.append(i * i)\n    return result',
     hint: 'range(n) даёт 0..n-1, а нужно 1..n.',
     flavor: 'Враг подсунул сломанный код. Почини — урон будет тебе же.',
+    solution: 'def squares(n):\n    result = []\n    for i in range(1, n + 1):\n        result.append(i * i)\n    return result',
+    explanation: 'Главная ошибка — range(n).\nrange(n) даёт числа от 0 до n-1, то есть squares(3) вернёт [0, 1, 4] вместо [1, 4, 9].\nНужен range(1, n + 1) — от 1 до n включительно.\nОстальной код правильный.',
     tests: [
       { call: 'squares(3)', expect: '[1, 4, 9]' },
       { call: 'squares(5)', expect: '[1, 4, 9, 16, 25]' },
@@ -364,7 +378,12 @@ export const COMBAT_TASKS: CombatTask[] = [
 
 // ═════════════════ ВЫБОР ЗАДАЧ ПО ВРАГУ ═════════════════
 
-export function pickTasksForEnemy(enemyTopics: TaskTopic[], enemyDifficulty: TaskDiff, count = 4): CombatTask[] {
+export function pickTasksForEnemy(
+  enemyTopics: TaskTopic[],
+  enemyDifficulty: TaskDiff,
+  count = 4,
+  allowedTypes?: TaskType[],
+): CombatTask[] {
   // Сложность врага → допустимые сложности задач
   const diffMap: Record<TaskDiff, TaskDiff[]> = {
     trivial: ['trivial', 'easy'],
@@ -374,13 +393,23 @@ export function pickTasksForEnemy(enemyTopics: TaskTopic[], enemyDifficulty: Tas
     elite:   ['hard', 'elite'],
   };
   const allowed = diffMap[enemyDifficulty];
+  const typeOk = (t: CombatTask) => !allowedTypes || allowedTypes.includes(t.type);
 
   const pool = COMBAT_TASKS.filter(t =>
-    enemyTopics.includes(t.topic) && allowed.includes(t.difficulty)
+    enemyTopics.includes(t.topic) && allowed.includes(t.difficulty) && typeOk(t)
   );
-  // Если пул маленький — добавим из соседних тем
-  const fallback = COMBAT_TASKS.filter(t => allowed.includes(t.difficulty));
-  const chosen = (pool.length >= count ? pool : [...pool, ...fallback])
+  // Если пул маленький — добавим из соседних тем (но всё ещё с правильным типом)
+  const fallback = COMBAT_TASKS.filter(t => allowed.includes(t.difficulty) && typeOk(t));
+  // Финальный безопасный fallback — берём вообще любые с правильным типом
+  const safeFallback = COMBAT_TASKS.filter(typeOk);
+
+  const merged = pool.length >= count
+    ? pool
+    : fallback.length >= count
+    ? [...pool, ...fallback]
+    : [...pool, ...fallback, ...safeFallback];
+
+  const chosen = merged
     .sort(() => Math.random() - 0.5)
     .slice(0, count);
   return chosen;

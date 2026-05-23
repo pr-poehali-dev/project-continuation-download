@@ -8,7 +8,7 @@
  *  - difficulty: фильтр сложности задач
  */
 
-import type { TaskTopic, TaskDiff } from './combatTasks';
+import type { TaskTopic, TaskDiff, TaskType } from './combatTasks';
 
 export interface CombatEnemy {
   /** Уникальный id (используется на бекенде для записи побед). */
@@ -22,6 +22,8 @@ export interface CombatEnemy {
   difficulty: TaskDiff;
   /** Темы Python, по которым будут задачи. */
   topics: TaskTopic[];
+  /** Какие типы задач даёт враг. Если не указано — все доступные. */
+  allowedTypes?: TaskType[];
   /** Фракция-владелец. */
   faction: 'NEXUS' | 'BLACK_SYNTAX' | 'ORDER' | 'ROGUE';
   /** Атаки PREDICT — короткий код, который враг "бросает" игроку. */
@@ -49,12 +51,13 @@ export const ENEMIES: CombatEnemy[] = [
     name: 'SyntaxGhost',
     chapter: 1, level: 2, hp: 100, difficulty: 'trivial',
     topics: ['variables', 'conditions'],
+    allowedTypes: ['predict'],
     faction: 'NEXUS',
     taskCount: 3,
     xpReward: 80, credsReward: 40,
     color: '#00ff41', emoji: '👻',
-    lore: 'Призрак неверного синтаксиса. Слабый, но множится в коде новичков.',
-    taunt: 'Привет, агент. Покажи что умеешь объявлять переменные.',
+    lore: 'Призрак неверного синтаксиса. Слабый, но множится в коде новичков. Учит ЧИТАТЬ код.',
+    taunt: 'Привет, агент. Просто читай мой код и говори что он напечатает.',
     enemyAttacks: [
       { code: 'print(7 - 4)', expected: '3' },
     ],
@@ -63,12 +66,13 @@ export const ENEMIES: CombatEnemy[] = [
     id: 'name_error',
     name: 'NameError-α',
     chapter: 1, level: 4, hp: 160, difficulty: 'easy',
-    topics: ['variables', 'conditions', 'functions'],
+    topics: ['variables', 'conditions', 'loops'],
+    allowedTypes: ['predict', 'complete'],
     faction: 'NEXUS',
     taskCount: 4,
     xpReward: 140, credsReward: 70,
     color: '#00ff41', emoji: '🤖',
-    lore: 'Дрон-сборщик имён. Стирает переменные из памяти.',
+    lore: 'Дрон-сборщик имён. Стирает переменные из памяти. Учит ВСТАВЛЯТЬ слова в код.',
     enemyAttacks: [
       { code: 'x = 10\nprint(x * 2)', expected: '20' },
       { code: 'a, b = 3, 4\nprint(a + b)', expected: '7' },
@@ -78,6 +82,7 @@ export const ENEMIES: CombatEnemy[] = [
     id: 'type_error',
     name: 'TypeError-β',
     chapter: 1, level: 6, hp: 220, difficulty: 'easy',
+    allowedTypes: ['predict', 'complete', 'debug'],
     topics: ['variables', 'conditions', 'loops'],
     faction: 'NEXUS',
     taskCount: 4,
@@ -90,6 +95,7 @@ export const ENEMIES: CombatEnemy[] = [
     name: 'IndentDemon',
     chapter: 1, level: 8, hp: 350, difficulty: 'medium',
     topics: ['conditions', 'loops', 'functions'],
+    allowedTypes: ['predict', 'complete', 'debug', 'write'],
     faction: 'NEXUS',
     taskCount: 5,
     xpReward: 320, credsReward: 160,
