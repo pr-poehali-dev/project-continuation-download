@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { useGame, InventoryItem } from '@/lib/GameContext';
 import { api } from '@/lib/api';
 import EquipmentBadges from '@/components/EquipmentBadges';
+import { getAvatar } from '@/lib/characterAvatars';
 
 const RARITY_COLORS: Record<string, string> = {
   common: '#aaaaaa', uncommon: '#00ff41', rare: '#00aaff', epic: '#aa00ff', legendary: '#ffaa00',
@@ -31,17 +32,6 @@ const STAT_META: { key: string; label: string; color: string; icon: string }[] =
   { key: 'luck',         label: 'Удача',      color: '#aa00ff', icon: '🎲' },
 ];
 
-// Картинки персонажей по классу — мужские (default)
-const CLASS_IMG: Record<string, string> = {
-  cipher:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
-  data_ghost:       'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
-  neural_architect: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
-  // обратная совместимость
-  hacker:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
-  netrunner:        'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
-  street_samurai:   'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
-};
-
 const CLASS_COLOR: Record<string, string> = {
   cipher: '#00ff41', data_ghost: '#00aaff', neural_architect: '#aa00ff',
   hacker: '#00ff41', netrunner: '#00aaff', street_samurai: '#aa00ff',
@@ -64,7 +54,7 @@ export default function CharacterProfile() {
   if (!character) return null;
 
   const charColor = CLASS_COLOR[character.class] || '#00ff41';
-  const charImg   = CLASS_IMG[character.class]   || CLASS_IMG.cipher;
+  const charImg   = getAvatar(character.class, character.gender);
   const xpPct     = Math.round((character.xp / character.xp_to_next) * 100);
   const hpPct     = Math.round((character.hp / character.max_hp) * 100);
 
@@ -97,6 +87,14 @@ export default function CharacterProfile() {
     if (data.error) { showMsg('⚠ ' + data.error, false); return; }
     setCharacter(data);
     showMsg('✅ Предмет снят');
+  };
+
+  const switchGender = async (g: 'male' | 'female') => {
+    if (g === character.gender) return;
+    const data = await api.character.setGender(g);
+    if (data.error) { showMsg('⚠ ' + data.error, false); return; }
+    setCharacter(data);
+    showMsg(g === 'female' ? '✅ Пол сменён на женский' : '✅ Пол сменён на мужской');
   };
 
   // Предметы инвентаря, которые можно надеть
@@ -197,6 +195,33 @@ export default function CharacterProfile() {
             <div className="border border-white/5 px-4 py-3 flex items-center justify-between">
               <span className="font-mono text-[11px] text-gray-600">ГЛАВА</span>
               <span className="font-orbitron text-white text-sm">{character.current_chapter}</span>
+            </div>
+
+            {/* Gender switcher */}
+            <div className="border border-white/5 px-4 py-3">
+              <div className="font-mono text-[11px] text-gray-600 mb-2">ВНЕШНОСТЬ</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => switchGender('male')}
+                  className={`px-2 py-1.5 font-orbitron text-xs border transition-all ${
+                    (character.gender || 'male') === 'male'
+                      ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/10'
+                      : 'border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
+                  }`}
+                >
+                  ♂ Мужской
+                </button>
+                <button
+                  onClick={() => switchGender('female')}
+                  className={`px-2 py-1.5 font-orbitron text-xs border transition-all ${
+                    character.gender === 'female'
+                      ? 'border-cyber-magenta text-cyber-magenta bg-cyber-magenta/10'
+                      : 'border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
+                  }`}
+                >
+                  ♀ Женский
+                </button>
+              </div>
             </div>
           </div>
 

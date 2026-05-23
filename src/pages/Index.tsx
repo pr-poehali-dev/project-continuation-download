@@ -31,6 +31,7 @@ import PrologueFlow, { usePrologue } from '@/components/prologue/PrologueFlow';
 import { GAME_MODES, getModeState, getUnlockedModes } from '@/lib/gameModes';
 import { useGame } from '@/lib/GameContext';
 import { pushNotif } from '@/components/Notifications';
+import { getAvatar } from '@/lib/characterAvatars';
 
 type AppView = 'landing' | 'tutorial' | 'login' | 'register' | 'boot';
 type Section = 'home' | 'profile' | 'lessons' | 'battle' | 'dungeon' | 'quests' | 'map' | 'leaderboard' | 'shop' | 'notifications' | 'crafting' | 'achievements' | 'npc' | 'flashcards' | 'stories' | 'builder' | 'workshop';
@@ -204,14 +205,7 @@ export default function Index() {
   );
 }
 
-const CLASS_IMG_HOME: Record<string, string> = {
-  cipher:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
-  data_ghost:       'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
-  neural_architect: 'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
-  hacker:           'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/ab60e642-3eb1-4491-a0d5-fc580d0d09f2.jpg',
-  netrunner:        'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/1b0d5c41-5e94-4d1a-acb8-284f7932d90a.jpg',
-  street_samurai:   'https://cdn.poehali.dev/projects/05e77d6f-2123-49fc-8e7f-785497e395eb/files/a36ed9fa-ba2d-4c24-967a-4716846cf3b1.jpg',
-};
+// Аватары теперь живут в @/lib/characterAvatars (с учётом пола)
 
 function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
   const { character } = useGame();
@@ -227,7 +221,7 @@ function HomeSection({ onNavigate }: { onNavigate: (s: string) => void }) {
     hacker: 'CIPHER', netrunner: 'DATA GHOST', street_samurai: 'NEURAL ARCHITECT',
   };
   const charColor = classColor[character.class] || '#00ff41';
-  const charImg   = CLASS_IMG_HOME[character.class] || CLASS_IMG_HOME.cipher;
+  const charImg   = getAvatar(character.class, character.gender);
   const xpPct = Math.round((character.xp / character.xp_to_next) * 100);
   const hpPct = Math.round((character.hp / character.max_hp) * 100);
 

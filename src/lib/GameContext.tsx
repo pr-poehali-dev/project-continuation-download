@@ -34,6 +34,8 @@ export interface Character {
   equipment: Record<string, Equipment | null>;
   current_chapter: number;
   current_quest: string;
+  /** Пол персонажа — влияет на отображаемый аватар */
+  gender?: 'male' | 'female';
 }
 
 export interface InventoryItem {

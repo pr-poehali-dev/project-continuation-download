@@ -91,7 +91,7 @@ export default function CreateCharacter() {
   const create = async () => {
     if (!name.trim() || name.length < 2) { setError('Имя минимум 2 символа'); return; }
     setLoading(true);
-    const data = await api.character.create(name.trim(), cls.id);
+    const data = await api.character.create(name.trim(), cls.id, gender);
     setLoading(false);
     if (data.error) setError(data.error);
     else setCharacter(data);

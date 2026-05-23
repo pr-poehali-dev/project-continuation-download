@@ -42,8 +42,10 @@ export const api = {
 
   character: {
     get: () => call(URLS.character, { action: "get" }),
-    create: (name: string, charClass: string) =>
-      call(URLS.character, { action: "create", name, class: charClass }),
+    create: (name: string, charClass: string, gender: "male" | "female" = "male") =>
+      call(URLS.character, { action: "create", name, class: charClass, gender }),
+    setGender: (gender: "male" | "female") =>
+      call(URLS.character, { action: "set_gender", gender }),
     equip: (item_id: number) =>
       call(URLS.character, { action: "equip", item_id }),
     unequip: (slot: string) =>

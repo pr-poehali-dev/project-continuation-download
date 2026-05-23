@@ -114,6 +114,7 @@ def get_character_full(cur, char_id):
         "current_chapter": data["current_chapter"],
         "current_quest": data["current_quest"],
         "created_at": str(data["created_at"]),
+        "gender": data.get("gender") or "male",
     }
 
 def handler(event: dict, context) -> dict:
@@ -165,6 +166,9 @@ def handler(event: dict, context) -> dict:
 
         char_name = body.get("name", "").strip()
         char_class = body.get("class", "hacker")
+        char_gender = body.get("gender", "male")
+        if char_gender not in ("male", "female"):
+            char_gender = "male"
         if not char_name or len(char_name) < 2:
             conn.close()
             return json_response({"error": "Имя минимум 2 символа"}, 400)
@@ -179,9 +183,9 @@ def handler(event: dict, context) -> dict:
 
         cur.execute(f"""
             INSERT INTO {SCHEMA}.characters
-            (user_id, name, class, stat_strength, stat_agility, stat_intelligence, stat_defense, stat_luck)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-        """, (user_id, char_name, char_class,
+            (user_id, name, class, gender, stat_strength, stat_agility, stat_intelligence, stat_defense, stat_luck)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """, (user_id, char_name, char_class, char_gender,
               stats["strength"], stats["agility"], stats["intelligence"],
               stats["defense"], stats["luck"]))
         char_id = cur.fetchone()[0]
@@ -197,6 +201,32 @@ def handler(event: dict, context) -> dict:
 
         conn.commit()
         char = get_character_full(cur, char_id)
+        conn.close()
+        return json_response(char)
+
+    # POST /set_gender — сменить пол персонажа (для существующих)
+    if action == "set_gender":
+        if not user_id:
+            conn.close()
+            return json_response({"error": "Не авторизован"}, 401)
+
+        new_gender = body.get("gender", "male")
+        if new_gender not in ("male", "female"):
+            conn.close()
+            return json_response({"error": "Неверный пол"}, 400)
+
+        cur.execute(f"SELECT id FROM {SCHEMA}.characters WHERE user_id=%s", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        cur.execute(
+            f"UPDATE {SCHEMA}.characters SET gender=%s WHERE user_id=%s",
+            (new_gender, user_id)
+        )
+        conn.commit()
+        char = get_character_full(cur, row[0])
         conn.close()
         return json_response(char)
 
