@@ -102,6 +102,10 @@ export const api = {
 
   progressSync: () => call(URLS.quest, { action: "progress_sync" }),
 
+  /** Сохранить набор универсальных ключей прогресса в БД (player_progress). */
+  progressSave: (entries: Record<string, unknown>) =>
+    call(URLS.quest, { action: "progress_save", entries }),
+
   // Фракции
   factionState: () => call(URLS.quest, { action: "faction_state" }),
   factionGain: (faction_id: string, amount: number) =>

@@ -164,6 +164,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
+  // Перед закрытием вкладки — попытка сохранить прогресс в БД
+  useEffect(() => {
+    if (!token) return;
+    const onUnload = () => {
+      import('./progressStore').then(m => m.flushProgressNow()).catch(() => {});
+    };
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+  }, [token]);
+
   async function refreshCharacter() {
     if (!token) return;
     const data = await api.character.get();
@@ -213,8 +223,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return {};
   }
 
-  function logout() {
+  async function logout() {
+    // Перед выходом — финально сохраняем прогресс в БД, чтобы ничего не потерять
+    try {
+      const { flushProgressNow } = await import('./progressStore');
+      await flushProgressNow();
+    } catch { /* ignore */ }
     api.auth.logout();
+    progress.clearLocalCache();
     localStorage.removeItem('coderp_token');
     localStorage.removeItem('coderp_username');
     setToken(null);

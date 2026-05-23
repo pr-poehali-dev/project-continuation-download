@@ -38,24 +38,24 @@ const RARITY_META = {
 
 const ACHIEVEMENTS: Achievement[] = [
   // Python
-  { id: 'first_var',    title: 'Первая переменная',    desc: 'Успешно создай первую переменную в уроке',    icon: '📦', color: '#00ff41', category: 'python', rarity: 'common',    progress: 1, goal: 1,  unlocked: true,  reward: '+50 XP',         hint: 'Пройди урок "Переменные и типы"' },
+  { id: 'first_var',    title: 'Первая переменная',    desc: 'Успешно создай первую переменную в уроке',    icon: '📦', color: '#00ff41', category: 'python', rarity: 'common',    progress: 0, goal: 1,  unlocked: false, reward: '+50 XP',         hint: 'Пройди урок "Переменные и типы"' },
   { id: 'first_func',   title: 'Функциональный',       desc: 'Напиши и запусти первую функцию',             icon: '🔧', color: '#00ff41', category: 'python', rarity: 'common',    progress: 0, goal: 1,  unlocked: false, reward: '+100 XP',        hint: 'Урок "Функции и модули"' },
-  { id: 'loop_master',  title: 'Мастер циклов',        desc: 'Пройди 3 урока с циклами',                   icon: '🔄', color: '#00ff41', category: 'python', rarity: 'uncommon',  progress: 1, goal: 3,  unlocked: false, reward: '+200 XP · Bit Scrap ×5', hint: 'Выполняй задания по циклам' },
+  { id: 'loop_master',  title: 'Мастер циклов',        desc: 'Пройди 3 урока с циклами',                   icon: '🔄', color: '#00ff41', category: 'python', rarity: 'uncommon',  progress: 0, goal: 3,  unlocked: false, reward: '+200 XP · Bit Scrap ×5', hint: 'Выполняй задания по циклам' },
   { id: 'oop_class',    title: 'Архитектор',           desc: 'Создай первый класс Python',                 icon: '🤖', color: '#00aaff', category: 'python', rarity: 'rare',      progress: 0, goal: 1,  unlocked: false, reward: '+500 XP · Neon Crystal ×2', hint: 'Урок "Классы и ООП"' },
-  { id: 'all_lessons',  title: 'Кодовая Эрудиция',    desc: 'Пройди все 12 уроков',                       icon: '🏅', color: '#ffaa00', category: 'python', rarity: 'legendary', progress: 3, goal: 12, unlocked: false, reward: '+2000 XP · Void Shard', hint: 'Изучи все темы Python' },
-  { id: 'perfect_code', title: 'Чистый код',           desc: 'Реши 5 заданий с первой попытки',            icon: '✨', color: '#00ffff', category: 'python', rarity: 'epic',      progress: 2, goal: 5,  unlocked: false, reward: '+1000 XP · Clean Token', hint: 'Пиши код правильно с первого раза' },
+  { id: 'all_lessons',  title: 'Кодовая Эрудиция',    desc: 'Пройди все 12 уроков',                       icon: '🏅', color: '#ffaa00', category: 'python', rarity: 'legendary', progress: 0, goal: 12, unlocked: false, reward: '+2000 XP · Void Shard', hint: 'Изучи все темы Python' },
+  { id: 'perfect_code', title: 'Чистый код',           desc: 'Реши 5 заданий с первой попытки',            icon: '✨', color: '#00ffff', category: 'python', rarity: 'epic',      progress: 0, goal: 5,  unlocked: false, reward: '+1000 XP · Clean Token', hint: 'Пиши код правильно с первого раза' },
   // Combat
-  { id: 'first_kill',   title: 'Первая кровь',         desc: 'Победи первого врага в Code Combat',          icon: '⚡', color: '#ff00ff', category: 'combat', rarity: 'common',    progress: 1, goal: 1,  unlocked: true,  reward: '+100 XP',        hint: 'Выиграй бой в Code Combat' },
-  { id: 'nexus_hunter', title: 'Охотник NEXUS',        desc: 'Победи 10 агентов NEXUS',                    icon: '💀', color: '#ff4060', category: 'combat', rarity: 'uncommon',  progress: 3, goal: 10, unlocked: false, reward: '+300 XP · NEXUS Chip ×3', hint: 'Побеждай в Code Combat' },
-  { id: 'streak_king',  title: 'Серийный хакер',       desc: 'Выиграй 5 боёв подряд без поражения',        icon: '🔥', color: '#ff4060', category: 'combat', rarity: 'rare',      progress: 2, goal: 5,  unlocked: false, reward: '+600 XP · Loop Wire ×4', hint: 'Не проигрывай в Code Combat' },
+  { id: 'first_kill',   title: 'Первая кровь',         desc: 'Победи первого врага в Code Combat',          icon: '⚡', color: '#ff00ff', category: 'combat', rarity: 'common',    progress: 0, goal: 1,  unlocked: false, reward: '+100 XP',        hint: 'Выиграй бой в Code Combat' },
+  { id: 'nexus_hunter', title: 'Охотник NEXUS',        desc: 'Победи 10 агентов NEXUS',                    icon: '💀', color: '#ff4060', category: 'combat', rarity: 'uncommon',  progress: 0, goal: 10, unlocked: false, reward: '+300 XP · NEXUS Chip ×3', hint: 'Побеждай в Code Combat' },
+  { id: 'streak_king',  title: 'Серийный хакер',       desc: 'Выиграй 5 боёв подряд без поражения',        icon: '🔥', color: '#ff4060', category: 'combat', rarity: 'rare',      progress: 0, goal: 5,  unlocked: false, reward: '+600 XP · Loop Wire ×4', hint: 'Не проигрывай в Code Combat' },
   { id: 'boss_slayer',  title: 'Убийца боссов',        desc: 'Победи Archive_Rogue (Элита)',                icon: '🏆', color: '#ffaa00', category: 'combat', rarity: 'epic',      progress: 0, goal: 1,  unlocked: false, reward: '+1500 XP · Data Core ×5', hint: 'Сразись с Archive_Rogue LVL 25' },
   // Story
-  { id: 'joined',       title: 'Добро пожаловать',     desc: 'Создай персонажа и войди в игру',             icon: '🌆', color: '#00ffff', category: 'story', rarity: 'common',    progress: 1, goal: 1,  unlocked: true,  reward: '+50 XP',         hint: 'Уже выполнено!' },
+  { id: 'joined',       title: 'Добро пожаловать',     desc: 'Создай персонажа и войди в игру',             icon: '🌆', color: '#00ffff', category: 'story', rarity: 'common',    progress: 0, goal: 1,  unlocked: false, reward: '+50 XP',         hint: 'Создай персонажа' },
   { id: 'act1_done',    title: 'Пробуждение',          desc: 'Завершни первый квест от The Archive',        icon: '📡', color: '#00ff41', category: 'story', rarity: 'uncommon',  progress: 0, goal: 1,  unlocked: false, reward: '+400 XP · Syntax Gel ×3', hint: 'Выполни квест "Пробуждение агента"' },
-  { id: 'faction_rep',  title: 'Агент Archive',        desc: 'Получи репутацию 100 в The Archive',         icon: '🎖️', color: '#00ff41', category: 'story', rarity: 'rare',      progress: 20, goal: 100, unlocked: false, reward: '+800 XP · Archive Badge', hint: 'Выполняй квесты The Archive' },
+  { id: 'faction_rep',  title: 'Агент Archive',        desc: 'Получи репутацию 100 в The Archive',         icon: '🎖️', color: '#00ff41', category: 'story', rarity: 'rare',      progress: 0, goal: 100, unlocked: false, reward: '+800 XP · Archive Badge', hint: 'Выполняй квесты The Archive' },
   // Exploration
   { id: 'first_dungeon', title: 'Первооткрыватель',   desc: 'Пройди первое подземелье',                   icon: '🏰', color: '#ffaa00', category: 'exploration', rarity: 'common',  progress: 0, goal: 1,  unlocked: false, reward: '+150 XP',       hint: 'Зайди в раздел Подземелья' },
-  { id: 'map_explorer', title: 'Картограф',            desc: 'Открой 5 районов на карте города',           icon: '🗺️', color: '#ffaa00', category: 'exploration', rarity: 'uncommon', progress: 2, goal: 5, unlocked: false, reward: '+300 XP',        hint: 'Повышай уровень для открытия районов' },
+  { id: 'map_explorer', title: 'Картограф',            desc: 'Открой 5 районов на карте города',           icon: '🗺️', color: '#ffaa00', category: 'exploration', rarity: 'uncommon', progress: 0, goal: 5, unlocked: false, reward: '+300 XP',        hint: 'Повышай уровень для открытия районов' },
   { id: 'perfect_dungeon', title: 'Совершенный данж', desc: 'Пройди подземелье с 100% правильных ответов', icon: '💯', color: '#aa00ff', category: 'exploration', rarity: 'epic',   progress: 0, goal: 1,  unlocked: false, reward: '+1200 XP · Void Shard', hint: 'Ответь верно на все вопросы в данже' },
   // Social
   { id: 'top_10',       title: 'Топ-10',               desc: 'Попади в топ-10 рейтинга',                   icon: '🥇', color: '#ffff00', category: 'social', rarity: 'rare',      progress: 0, goal: 1,  unlocked: false, reward: '+500 XP',        hint: 'Зарабатывай XP и повышай уровень' },
@@ -64,26 +64,33 @@ const ACHIEVEMENTS: Achievement[] = [
 
 // ─── Вычисляем реальный прогресс из progressStore ────────────────────────────
 
-function getRealProgress(a: Achievement, prog: ReturnType<typeof useProgress>, charLevel: number): { progress: number; unlocked: boolean } {
+function getRealProgress(
+  a: Achievement,
+  prog: ReturnType<typeof useProgress>,
+  charLevel: number,
+  hasCharacter: boolean,
+): { progress: number; unlocked: boolean } {
   switch (a.id) {
     case 'first_var':       return { progress: prog.lessonsCompleted.includes(1) ? 1 : 0, unlocked: prog.lessonsCompleted.includes(1) };
     case 'first_func':      return { progress: prog.lessonsCompleted.includes(6) ? 1 : 0, unlocked: prog.lessonsCompleted.includes(6) };
-    case 'loop_master':     { const n = [4,5,3].filter(id => prog.lessonsCompleted.includes(id)).length; return { progress: n, unlocked: n >= 3 }; }
+    case 'loop_master':     { const n = [4,5,3].filter(id => prog.lessonsCompleted.includes(id)).length; return { progress: Math.min(3, n), unlocked: n >= 3 }; }
     case 'oop_class':       return { progress: prog.lessonsCompleted.includes(11) ? 1 : 0, unlocked: prog.lessonsCompleted.includes(11) };
-    case 'all_lessons':     return { progress: prog.lessonsCompleted.length, unlocked: prog.lessonsCompleted.length >= 12 };
+    case 'all_lessons':     return { progress: Math.min(12, prog.lessonsCompleted.length), unlocked: prog.lessonsCompleted.length >= 12 };
     case 'first_kill':      return { progress: Math.min(1, prog.battlesWon), unlocked: prog.battlesWon >= 1 };
     case 'nexus_hunter':    return { progress: Math.min(10, prog.battlesWon), unlocked: prog.battlesWon >= 10 };
     case 'streak_king':     return { progress: Math.min(5, prog.battlesStreakBest), unlocked: prog.battlesStreakBest >= 5 };
     case 'boss_slayer':     return { progress: prog.battlesWon >= 20 ? 1 : 0, unlocked: prog.battlesWon >= 20 };
-    case 'joined':          return { progress: 1, unlocked: true };
+    // Открывается только когда персонаж реально создан И сыграна хотя бы одна сессия / зачёт
+    case 'joined':          return { progress: hasCharacter ? 1 : 0, unlocked: hasCharacter && (prog.battlesWon > 0 || prog.lessonsCompleted.length > 0 || prog.sessionsCount > 1) };
     case 'act1_done':       return { progress: prog.battlesWon >= 1 && prog.lessonsCompleted.length >= 1 ? 1 : 0, unlocked: prog.battlesWon >= 1 && prog.lessonsCompleted.length >= 1 };
     case 'faction_rep':     { const rep = prog.lessonsCompleted.length * 5 + prog.battlesWon * 3 + prog.dungeonsCompleted.length * 10; return { progress: Math.min(100, rep), unlocked: rep >= 100 }; }
     case 'first_dungeon':   return { progress: prog.dungeonsCompleted.length >= 1 ? 1 : 0, unlocked: prog.dungeonsCompleted.length >= 1 };
-    case 'map_explorer':    { const districts = Math.min(5, 1 + Math.floor(charLevel / 3)); return { progress: districts, unlocked: districts >= 5 }; }
+    // Открытые районы: первые открываются при росте уровня, но только если он реально вырос
+    case 'map_explorer':    { const districts = charLevel >= 2 ? Math.min(5, Math.floor(charLevel / 3)) : 0; return { progress: districts, unlocked: districts >= 5 }; }
     case 'perfect_dungeon': { const perfect = Object.values(prog.dungeonsScores).some(s => s === 100); return { progress: perfect ? 1 : 0, unlocked: perfect }; }
     case 'craftsman':       return { progress: Math.min(3, prog.itemsCrafted), unlocked: prog.itemsCrafted >= 3 };
     case 'top_10':          return { progress: charLevel >= 10 ? 1 : 0, unlocked: charLevel >= 10 };
-    default:                return { progress: a.progress, unlocked: a.unlocked };
+    default:                return { progress: 0, unlocked: false };
   }
 }
 
@@ -97,11 +104,12 @@ export default function Achievements() {
 
   // Вычисляем реальный прогресс для каждой ачивки
   const achievementsWithProgress = useMemo(() => {
+    const hasChar = !!character?.id;
     return ACHIEVEMENTS.map(a => {
-      const real = getRealProgress(a, prog, character?.level ?? 1);
+      const real = getRealProgress(a, prog, character?.level ?? 1, hasChar);
       return { ...a, progress: real.progress, unlocked: real.unlocked };
     });
-  }, [prog, character?.level]);
+  }, [prog, character?.id, character?.level]);
 
   const filtered = achievementsWithProgress.filter(a => {
     if (filter !== 'all' && a.category !== filter) return false;

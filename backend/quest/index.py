@@ -579,6 +579,13 @@ def handler(event: dict, context) -> dict:
             else:
                 current_streak = 0
 
+        # Универсальный прогресс из player_progress
+        cur.execute(
+            f"SELECT progress_key, data FROM {SCHEMA}.player_progress WHERE character_id=%s",
+            (char_id,)
+        )
+        extra = {row[0]: row[1] for row in cur.fetchall()}
+
         conn.close()
 
         return json_response({
@@ -587,7 +594,43 @@ def handler(event: dict, context) -> dict:
             "battles_streak_best": best_streak,
             "dungeons_completed":  dungeons_completed,
             "dungeons_scores":     dungeons_scores,
+            "extra":               extra,
         })
+
+    # progress_save — сохранить любой набор ключей универсального прогресса в БД
+    # body: { action: "progress_save", entries: { "stories_completed": {...}, "counters": {...} } }
+    if action == "progress_save":
+        if not token:
+            return json_response({"error": "Не авторизован"}, 401)
+
+        entries = body.get("entries") or {}
+        if not isinstance(entries, dict) or not entries:
+            return json_response({"error": "Нет данных"}, 400)
+
+        conn = get_conn()
+        cur = conn.cursor()
+        char = get_char(cur, token)
+        if not char:
+            conn.close()
+            return json_response({"error": "Персонаж не найден"}, 404)
+
+        char_id = char[0]
+        saved = []
+        for key, value in entries.items():
+            if not isinstance(key, str) or len(key) > 64:
+                continue
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.player_progress (character_id, progress_key, data, updated_at) "
+                f"VALUES (%s, %s, %s, NOW()) "
+                f"ON CONFLICT (character_id, progress_key) "
+                f"DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()",
+                (char_id, key, json.dumps(value))
+            )
+            saved.append(key)
+
+        conn.commit()
+        conn.close()
+        return json_response({"ok": True, "saved": saved})
 
     # faction_state — репутация игрока + глобальное влияние фракций
     if action == "faction_state":

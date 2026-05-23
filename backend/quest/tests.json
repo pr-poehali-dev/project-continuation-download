@@ -19,6 +19,15 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "progress_save unauthenticated",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "progress_save", "entries": {"stories_completed": {"ids": ["x"]}}},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "faction_state unauthenticated",
       "method": "POST",
       "path": "/",

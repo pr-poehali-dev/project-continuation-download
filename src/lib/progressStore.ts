@@ -1,10 +1,23 @@
 /**
- * progressStore — localStorage-хранилище игрового прогресса.
- * Все компоненты пишут сюда события (урок пройден, бой выигран и т.д.)
- * QuestLog и Achievements читают отсюда для отображения реального прогресса.
+ * progressStore — хранилище игрового прогресса.
+ *
+ * Архитектура:
+ *  - КАЖДЫЙ пользователь имеет свой собственный прогресс (ключ зависит от username).
+ *  - localStorage играет роль КЕША — данные пишутся туда мгновенно.
+ *  - При логине прогресс ПОДТЯГИВАЕТСЯ из БД (progress_sync.extra) — синхронизация.
+ *  - При важных событиях (бой/урок/крафт/...) сохраняется в БД через api.progressSave.
+ *  - Это позволяет открыть игру на другом устройстве и продолжить с того же места.
+ *
+ * Источник правды — БД. localStorage только для скорости и offline.
  */
 
-const KEY = 'coderp_progress_v1';
+import { userKey } from './userStorage';
+
+// Динамический ключ для текущего пользователя.
+// У каждого аккаунта свой собственный прогресс.
+function storageKey(): string {
+  return userKey('progress_v1');
+}
 
 export interface ProgressState {
   lessonsCompleted: number[];    // id пройденных уроков
@@ -63,7 +76,7 @@ function today(): string {
 
 function load(): ProgressState {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return { ...DEFAULT };
     const parsed = JSON.parse(raw) as Partial<ProgressState>;
     return { ...DEFAULT, ...parsed };
@@ -73,7 +86,59 @@ function load(): ProgressState {
 }
 
 function save(state: ProgressState) {
-  localStorage.setItem(KEY, JSON.stringify(state));
+  localStorage.setItem(storageKey(), JSON.stringify(state));
+}
+
+// ─── Синхронизация с БД ───────────────────────────────────────────────────
+// Дебаунс — не дёргаем API при каждом изменении, копим пачкой.
+let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+let _syncPending = false;
+
+/** Запланировать запись на сервер (дебаунс 1.5с). */
+function scheduleServerSync() {
+  _syncPending = true;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    _syncTimer = null;
+    flushToServer();
+  }, 1500);
+}
+
+async function flushToServer() {
+  if (!_syncPending) return;
+  _syncPending = false;
+  const s = load();
+  // Берём только то, чего нет в основных таблицах БД.
+  // Lessons/battles/dungeons — уже в БД через свои endpoints.
+  const entries = {
+    stories_completed:    { ids: s.storiesCompleted },
+    builders_solved:      { ids: s.buildersSolved },
+    implants_crafted:     { ids: s.implantsCrafted },
+    implants_equipped:    { ids: s.implantsEquipped },
+    flashcards_learned:   { ids: s.flashcardsLearned },
+    npcs_spoken:          { ids: s.npcsSpoken },
+    quest_objectives:     s.questObjectives,
+    counters: {
+      items_crafted:   s.itemsCrafted,
+      lootboxes_opened: s.lootboxesOpened,
+      shop_buys:       s.shopBuys,
+      total_xp_earned: s.totalXpEarned,
+      sessions_count:  s.sessionsCount,
+    },
+  };
+  try {
+    // Динамический импорт чтобы не было циклической зависимости с api.ts
+    const { api } = await import('./api');
+    await api.progressSave?.(entries);
+  } catch {
+    // Не критично — данные останутся в localStorage и отправятся в следующий раз
+  }
+}
+
+/** Принудительно сохранить прогресс на сервере (например перед logout). */
+export async function flushProgressNow() {
+  if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+  await flushToServer();
 }
 
 function resetDailyIfNeeded(state: ProgressState): ProgressState {
@@ -257,32 +322,87 @@ export const progress = {
     return s.questObjectives[questId]?.[idx] ?? false;
   },
 
-  /** Подтянуть прогресс с сервера и смержить с локальным */
+  /** Подтянуть прогресс с сервера и смержить с локальным. БД — источник правды. */
   mergeFromServer(server: {
     lessons_completed?: number[];
     battles_won?: number;
     battles_streak_best?: number;
     dungeons_completed?: string[];
     dungeons_scores?: Record<string, number>;
+    extra?: Record<string, unknown>;
   }) {
     const s = load();
-    const lessons = new Set<number>([...s.lessonsCompleted, ...(server.lessons_completed || [])]);
-    s.lessonsCompleted = Array.from(lessons);
 
-    const dungeons = new Set<string>([...s.dungeonsCompleted, ...(server.dungeons_completed || [])]);
-    s.dungeonsCompleted = Array.from(dungeons);
-
-    const scores = { ...s.dungeonsScores };
-    for (const [d, sc] of Object.entries(server.dungeons_scores || {})) {
-      scores[d] = Math.max(scores[d] ?? 0, sc);
+    // Базовые системы — БЕРЁМ ИЗ БД (с лимитом по локальному значению на случай если БД пуста)
+    if (Array.isArray(server.lessons_completed)) {
+      const lessons = new Set<number>([...s.lessonsCompleted, ...server.lessons_completed]);
+      s.lessonsCompleted = Array.from(lessons);
     }
-    s.dungeonsScores = scores;
+    if (Array.isArray(server.dungeons_completed)) {
+      const dungeons = new Set<string>([...s.dungeonsCompleted, ...server.dungeons_completed]);
+      s.dungeonsCompleted = Array.from(dungeons);
+    }
+    if (server.dungeons_scores) {
+      const scores = { ...s.dungeonsScores };
+      for (const [d, sc] of Object.entries(server.dungeons_scores)) {
+        scores[d] = Math.max(scores[d] ?? 0, sc);
+      }
+      s.dungeonsScores = scores;
+    }
+    if (typeof server.battles_won === 'number') {
+      s.battlesWon = Math.max(s.battlesWon, server.battles_won);
+    }
+    if (typeof server.battles_streak_best === 'number') {
+      s.battlesStreakBest = Math.max(s.battlesStreakBest, server.battles_streak_best);
+    }
 
-    s.battlesWon         = Math.max(s.battlesWon, server.battles_won ?? 0);
-    s.battlesStreakBest  = Math.max(s.battlesStreakBest, server.battles_streak_best ?? 0);
+    // Расширенный прогресс из player_progress (универсальная таблица)
+    const extra = server.extra || {};
+    const getIds = (k: string): string[] => {
+      const v = extra[k] as { ids?: string[] } | undefined;
+      return Array.isArray(v?.ids) ? v.ids : [];
+    };
+    if (extra['stories_completed']) {
+      s.storiesCompleted = Array.from(new Set([...s.storiesCompleted, ...getIds('stories_completed')]));
+    }
+    if (extra['builders_solved']) {
+      s.buildersSolved = Array.from(new Set([...s.buildersSolved, ...getIds('builders_solved')]));
+    }
+    if (extra['implants_crafted']) {
+      s.implantsCrafted = Array.from(new Set([...s.implantsCrafted, ...getIds('implants_crafted')]));
+    }
+    if (extra['implants_equipped']) {
+      // Equipped — берём с сервера как авторитетный источник (только если есть)
+      const ids = getIds('implants_equipped');
+      if (ids.length) s.implantsEquipped = ids.slice(0, 3);
+    }
+    if (extra['flashcards_learned']) {
+      s.flashcardsLearned = Array.from(new Set([...s.flashcardsLearned, ...getIds('flashcards_learned')]));
+    }
+    if (extra['npcs_spoken']) {
+      s.npcsSpoken = Array.from(new Set([...s.npcsSpoken, ...getIds('npcs_spoken')]));
+    }
+    if (extra['quest_objectives'] && typeof extra['quest_objectives'] === 'object') {
+      s.questObjectives = { ...s.questObjectives, ...(extra['quest_objectives'] as Record<string, boolean[]>) };
+    }
+    if (extra['counters'] && typeof extra['counters'] === 'object') {
+      const c = extra['counters'] as Record<string, number>;
+      s.itemsCrafted    = Math.max(s.itemsCrafted, c.items_crafted ?? 0);
+      s.lootboxesOpened = Math.max(s.lootboxesOpened, c.lootboxes_opened ?? 0);
+      s.shopBuys        = Math.max(s.shopBuys, c.shop_buys ?? 0);
+      s.totalXpEarned   = Math.max(s.totalXpEarned, c.total_xp_earned ?? 0);
+      s.sessionsCount   = Math.max(s.sessionsCount, c.sessions_count ?? 0);
+    }
 
     save(s);
-    _emit();
+    _emit(false); // НЕ синкаем обратно — это просто загрузка с сервера
+  },
+
+  /** Сбросить прогресс ТЕКУЩЕГО пользователя (вызывается при logout/смене аккаунта). */
+  clearLocalCache() {
+    try { localStorage.removeItem(storageKey()); } catch { /* ignore */ }
+    invalidateSnapshot();
+    listeners.forEach(fn => fn());
   },
 };
 
@@ -290,9 +410,10 @@ export const progress = {
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
-function _emit() {
+function _emit(syncServer = true) {
   invalidateSnapshot();
   listeners.forEach(fn => fn());
+  if (syncServer) scheduleServerSync();
 }
 
 export function subscribeProgress(fn: Listener): () => void {
