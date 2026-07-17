@@ -22,10 +22,15 @@ async function call(url: string, body: Record<string, unknown>) {
       },
       body: JSON.stringify(body),
     });
-    return res.json();
+    const data = await res.json().catch(() => ({}));
+    // Прокидываем HTTP-статус, чтобы отличать протухший токен (401) от других ошибок
+    if (data && typeof data === "object" && !("status" in data)) {
+      data._status = res.status;
+    }
+    return data;
   } catch (e) {
     console.error("Fetch error:", e, "for", url);
-    return { error: "network_error" };
+    return { error: "network_error", _status: 0 };
   }
 }
 

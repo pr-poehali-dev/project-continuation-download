@@ -180,8 +180,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!data.error) {
       setCharacter(normalizeCharacter(data));
     } else if (data.no_character) {
+      // Авторизован, но персонажа ещё нет — экран создания
+      setCharacter(null);
+    } else if (data._status === 401 || data._status === 403) {
+      // Токен протух или невалиден (например после передеплоя бэкенда) —
+      // сбрасываем сессию и возвращаемся на главный экран (Landing)
+      localStorage.removeItem('coderp_token');
+      localStorage.removeItem('coderp_username');
+      setToken(null);
+      setUsername(null);
       setCharacter(null);
     }
+    // При сетевой ошибке (network_error / _status 0) — НЕ трогаем токен,
+    // чтобы не разлогинивать при временных проблемах со связью
   }
 
   async function refreshInventory() {
