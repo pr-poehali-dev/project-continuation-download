@@ -1,10 +1,10 @@
 const URLS = {
-  auth: "https://functions.poehali.dev/10a16760-9840-4c2a-9b07-65ac9a7c5113",
-  character: "https://functions.poehali.dev/91df215e-5498-4720-8707-c53506997589",
-  shop: "https://functions.poehali.dev/369b1247-fa90-4446-9c74-2b3373bf9c62",
-  battle: "https://functions.poehali.dev/87c8743c-6ec8-4e87-9447-b63d585ef0a2",
-  quest: "https://functions.poehali.dev/74ef1783-327c-4071-9393-e56320709565",
-  admin: "https://functions.poehali.dev/f59cf78a-fac8-4029-9629-9272c02fa98c",
+  auth: "https://functions.poehali.dev/9e1a9124-1398-4fa0-aabf-cfbb0f8037da",
+  character: "https://functions.poehali.dev/3d3307ba-1872-414f-bdd7-6387a5fed809",
+  shop: "https://functions.poehali.dev/724b5290-0610-4194-9c66-13f6da573293",
+  battle: "https://functions.poehali.dev/8f7f4fdc-a2cd-4efb-b8df-8a57fbac93d9",
+  quest: "https://functions.poehali.dev/8ef4d3f5-e84b-4fef-ba75-733790fbc571",
+  admin: "https://functions.poehali.dev/756e5ef1-2f8c-4a68-b35c-325df6426ea3",
 };
 
 function getToken(): string {
