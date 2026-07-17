@@ -23,6 +23,7 @@ import CodeStories from '@/components/CodeStories';
 import CodeBuilder from '@/components/CodeBuilder';
 import CodeWorkshop from '@/components/CodeWorkshop';
 import NextStepWidget from '@/components/NextStepWidget';
+import NextStepFAB from '@/components/NextStepFAB';
 import EquipmentBadges from '@/components/EquipmentBadges';
 import BetaBanner from '@/components/BetaBanner';
 import QuestWatcher from '@/components/QuestWatcher';
@@ -190,6 +191,10 @@ export default function Index() {
       </main>
       <ToastContainer />
       <QuestWatcher />
+      {/* Сквозная кнопка «Что дальше?» — скрыта во время линейного пролога */}
+      {!prologue.active && (
+        <NextStepFAB currentSection={activeSection} onNavigate={navigate} />
+      )}
       <BetaBanner version="0.1.0-beta" />
       {prologue.step && (
         <PrologueFlow
